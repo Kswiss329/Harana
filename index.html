@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Harana &amp; Co. — Heritage Meal Plans</title>
+  <meta name="description" content="Harana &amp; Co. serves chef-crafted Filipino heritage meals with modern nutrition. Explore Makata, Lakan, Mutya, Diwata, and Halaman plans." />
+  <style>
+    :root {
+      --ink: #1A1714;
+      --charcoal: #24211D;
+      --parchment: #EAE6DF;
+      --bone: #F4F1EB;
+      --gold: #C9A84C;
+      --gold-muted: #A38A3A;
+      --rosewood: #4A3328;
+      --mist: rgba(255,255,255,0.06);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: var(--charcoal);
+      color: var(--bone);
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: Georgia, 'Times New Roman', serif;
+      font-weight: 400;
+      letter-spacing: 0.2px;
+    }
+
+    a {
+      color: var(--gold);
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(26,23,20,0.85);
+      backdrop-filter: blur(8px);
+      border-bottom: 1px solid rgba(201,168,76,0.18);
+    }
+
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 28px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-family: Georgia, serif;
+      font-size: 22px;
+      letter-spacing: 1px;
+      color: var(--bone);
+    }
+    .logo span { color: var(--gold); }
+
+    nav ul {
+      list-style: none;
+      display: flex;
+      gap: 26px;
+      margin: 0;
+      padding: 0;
+    }
+
+    nav a {
+      color: var(--bone);
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      opacity: 0.9;
+    }
+
+    nav a:hover {
+      color: var(--gold);
+      opacity: 1;
+      text-decoration: none;
+    }
+
+    .cart-icon {
+      font-size: 18px;
+      cursor: pointer;
+      position: relative;
+      color: var(--bone);
+    }
+    .cart-count {
+      position: absolute;
+      top: -8px;
+      right: -10px;
+      background: var(--gold);
+      color: var(--ink);
+      font-size: 10px;
+      font-weight: bold;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .hero {
+      position: relative;
+      padding: 80px 20px 60px;
+      text-align: center;
+      background:
+        radial-gradient(circle at top, rgba(201,168,76,0.18), transparent 40%),
+        linear-gradient(180deg, rgba(26,23,20,0.2), transparent),
+        var(--charcoal);
+      border-bottom: 1px solid rgba(201,168,76,0.18);
+    }
+
+    .hero h1 {
+      font-size: clamp(32px, 5vw, 54px);
+      margin: 0 0 14px;
+      color: var(--bone);
+    }
+    .hero p {
+      color: #C8C3B8;
+      max-width: 620px;
+      margin: 0 auto;
+      font-size: 16px;
+    }
+
+    .filters {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      padding: 28px 20px;
+      flex-wrap: wrap;
+    }
+
+    .filter-btn {
+      background: transparent;
+      border: 1px solid rgba(201,168,76,0.45);
+      color: var(--bone);
+      padding: 10px 22px;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: 0.25s;
+      font-family: Georgia, serif;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: var(--gold);
+      color: var(--ink);
+      border-color: var(--gold);
+    }
+
+    .menu-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 10px 28px 90px;
+    }
+
+    .menu-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 26px;
+    }
+
+    .meal-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      border: 1px solid rgba(201,168,76,0.16);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+    }
+
+    .meal-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 14px 28px rgba(0,0,0,0.35);
+      border-color: rgba(201,168,76,0.45);
+    }
+
+    .meal-img {
+      width: 100%;
+      height: 210px;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(201,168,76,0.18);
+      position: relative;
+      background: var(--ink);
+    }
+
+    .meal-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      opacity: 0.92;
+    }
+
+    .meal-img-fallback {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      background:
+        linear-gradient(135deg, rgba(74,51,40,0.55), rgba(26,23,20,0.85)),
+        repeating-linear-gradient(45deg, rgba(201,168,76,0.06) 0, rgba(201,168,76,0.06) 1px, transparent 1px, transparent 12px);
+    }
+
+    .meal-img-fallback span {
+      font-family: Georgia, serif;
+      font-style: italic;
+      color: #E3DCC8;
+      font-size: 16px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.45);
+    }
+
+    .meal-content {
+      padding: 20px;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .meal-plan-tag {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--gold);
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .meal-title {
+      font-size: 18px;
+      margin: 0 0 8px;
+      color: #EDE8DF;
+    }
+
+    .meal-desc {
+      font-size: 13px;
+      color: #B8B2A6;
+      margin-bottom: 14px;
+      flex-grow: 1;
+    }
+
+    .meal-macros {
+      display: flex;
+      gap: 8px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #E3DCC8;
+      border-top: 1px solid rgba(255,255,255,0.08);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding: 10px 0;
+      margin-bottom: 14px;
+      justify-content: space-between;
+    }
+
+    .macro-item { text-align: center; }
+    .macro-item span {
+      display: block;
+      font-size: 9px;
+      font-weight: normal;
+      color: #9A9285;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
+    .meal-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-card {
+      padding: 10px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      border: none;
+      flex: 1;
+      transition: 0.25s;
+      font-family: Georgia, serif;
+    }
+
+    .btn-recipe {
+      background: transparent;
+      border: 1px solid rgba(201,168,76,0.45);
+      color: var(--bone);
+    }
+    .btn-recipe:hover {
+      background: rgba(201,168,76,0.12);
+      border-color: var(--gold);
+      text-decoration: none;
+    }
+
+    .btn-add {
+      background: var(--gold);
+      color: var(--ink);
+      font-weight: bold;
+    }
+    .btn-add:hover {
+      background: #DDB85A;
+      text-decoration: none;
+    }
+    .btn-add.added {
+      background: #4E9A55;
+      color: white;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(10,9,8,0.82);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 200;
+      padding: 20px;
+    }
+    .modal-overlay.active { display: flex; }
+
+    .modal-content {
+      background: var(--charcoal);
+      border: 1px solid rgba(201,168,76,0.28);
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      position: relative;
+      animation: slideUp 0.35s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(30px); opacity: 0; }
+      to   { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-img {
+      width: 100%;
+      height: 220px;
+      background:
+        linear-gradient(135deg, rgba(74,51,40,0.55), rgba(26,23,20,0.85)),
+        repeating-linear-gradient(45deg, rgba(201,168,76,0.08) 0, rgba(201,168,76,0.08) 1px, transparent 1px, transparent 14px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 20px;
+      border-bottom: 1px solid rgba(201,168,76,0.18);
+    }
+    .modal-img span {
+      font-family: Georgia, serif;
+      font-style: italic;
+      color: #E3DCC8;
+      font-size: 22px;
+      text-shadow: 0 2px 10px rgba(0,0,0,0.45);
+    }
+
+    .modal-inner { padding: 28px; }
+    .close-modal {
+      position: absolute;
+      top: 12px; right: 14px;
+      font-size: 28px;
+      cursor: pointer;
+      color: var(--bone);
+      line-height: 1;
+      z-index: 10;
+      background: rgba(0,0,0,0.35);
+      border-radius: 50%;
+      width: 34px;
+      height: 34px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content h2 { color: #EDE8DF; margin-top: 0; }
+    .modal-tags { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+    .modal-tag {
+      font-size: 10px;
+      background: rgba(201,168,76,0.12);
+      color: #E3DCC8;
+      padding: 5px 10px;
+      border: 1px solid rgba(201,168,76,0.28);
+      letter-spacing: 0.4px;
+    }
+
+    .recipe-section { margin-bottom: 18px; }
+    .recipe-section h4 {
+      color: #E3DCC8;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+      font-size: 15px;
+    }
+    .recipe-section ul, .recipe-section ol {
+      padding-left: 20px;
+      font-size: 14px;
+      color: #C8C2B5;
+    }
+    .recipe-section li { margin-bottom: 7px; }
+
+    footer {
+      text-align: center;
+      padding: 24px;
+      color: #8A8377;
+      font-size: 12px;
+      border-top: 1px solid rgba(201,168,76,0.12);
+      background: var(--charcoal);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <div class="logo">Harana <span>&amp;</span> Co.</div>
+      <nav>
+        <ul>
+          <li><a href="#menu">Menu</a></li>
+          <li><a href="#how">How It Works</a></li>
+          <li><a href="#heritage">Heritage</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+      <div class="cart-icon" aria-label="Cart">🛒 <span class="cart-count" id="cartCount">0</span></div>
+    </div>
+  </header>
+
+  <section class="hero">
+    <h1>The Heritage Menu</h1>
+    <p>Traditional Filipino flavors, thoughtfully balanced for modern nutrition. Choose a plan and enjoy chef-crafted meals delivered to your door.</p>
+  </section>
+
+  <section class="filters" id="menu">
+    <button class="filter-btn active" onclick="filterMenu('all', event)">All Meals</button>
+    <button class="filter-btn" onclick="filterMenu('Makata', event)">Makata (Bulk)</button>
+    <button class="filter-btn" onclick="filterMenu('Lakan', event)">Lakan (Performance)</button>
+    <button class="filter-btn" onclick="filterMenu('Mutya', event)">Mutya (Lean)</button>
+    <button class="filter-btn" onclick="filterMenu('Diwata', event)">Diwata (Glow)</button>
+    <button class="filter-btn" onclick="filterMenu('Halaman', event)">Halaman (Vegan)</button>
+  </section>
+
+  <main class="menu-container">
+    <div class="menu-grid" id="menuGrid"></div>
+  </main>
+
+  <div class="modal-overlay" id="recipeModal" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <span class="close-modal" onclick="closeModal()" aria-label="Close">×</span>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <footer id="contact">
+    <p>© <span id="year"></span> Harana &amp; Co. — Heritage Meals, Modern Balance.</p>
+    <p style="margin-top:6px;">
+      <a href="mailto:hello@harana.co">hello@harana.co</a>
+    </p>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    const menuData = [
+      {
+        id: 1, plan: "Makata", name: "Slow-Braised Beef Kaldereta",
+        desc: "A timeless Filipino fiesta favorite. Slow-braised premium beef in a rich tomato sauce with olives and peppers, served over organic red rice.",
+        kcal: 850, protein: 55, carbs: 65, fat: 38,
+        tags: ["Beef", "Non-Spicy"],
+        image: "https://images.unsplash.com/photo-1544025162-d76694265947?w=800&auto=format&fit=crop&q=60",
+        ingredients: [
+          "200g premium beef chuck",
+          "1 cup tomato sauce",
+          "1/2 cup liver spread",
+          "1 large potato, cubed",
+          "1 carrot",
+          "1 red bell pepper",
+          "1 cup organic red rice",
+          "Olive oil, garlic, onion, bay leaves"
+        ],
+        method: [
+          "Sear beef in olive oil until browned.",
+          "Sauté garlic, onion, and tomato sauce.",
+          "Add beef, liver spread, bay leaves, and water. Simmer for 2 hours until tender.",
+          "Add potatoes, carrots, and bell peppers. Cook until vegetables are soft.",
+          "Serve hot over cooked organic red rice."
+        ]
+      },
+      {
+        id: 2, plan: "Makata", name: "Sweet & Savory Pork Humba",
+        desc: "Comforting Visayan classic. Pork belly braised in soy, vinegar, and black beans, paired with high-protein quinoa and a boiled egg.",
+        kcal: 920, protein: 60, carbs: 70, fat: 42,
+        tags: ["Pork", "Non-Spicy"],
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=60",
+        ingredients: [
+          "200g pork belly",
+          "Soy sauce",
+          "Vinegar",
+          "Black beans",
+          "Banana blossoms",
+          "Quinoa",
+          "1 hard-boiled egg"
+        ],
+        method: [
+          "Braise pork in soy, vinegar, and black beans until tender.",
+          "Add banana blossoms in the last 30 minutes.",
+          "Serve over cooked quinoa with a halved hard-boiled egg."
+        ]
+      },
+      {
+        id: 3, plan: "Lakan", name: "Charred Chicken Inasal",
+        desc: "The pride of Bacolod. Chicken marinated 24 hours in lemongrass and calamansi, grilled to perfection. Served with Java rice and fresh atchara.",
+        kcal: 650, protein: 48, carbs: 55, fat: 22,
+        tags: ["Chicken", "Non-Spicy"],
+        image: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=800&auto=format&fit=crop&q=60",
+        ingredients: [
+          "200g chicken thigh",
+          "Lemongrass",
+          "Calamansi",
+          "Ginger",
+          "Annatto oil",
+          "Jasmine rice",
+          "Papaya",
+          "Carrots",
+          "Vinegar"
+        ],
+        method: [
+          "Marinate chicken in lemongrass, calamansi, ginger, and annatto for 24 hours.",
+          "Grill until charred and cooked through.",
+          "Cook rice with annatto oil for Java rice.",
+          "Serve with fresh papaya atchara."
+        ]
+      },
+      {
+        id: 4, plan: "Lakan", name: "Seared Tuna Belly with Kangkong",
+        desc: "Omega-3 rich tuna belly lightly seared, served with garlic brown rice and sautéed water spinach.",
+        kcal: 580, protein: 45, carbs: 50, fat: 18,
+        tags: ["Seafood", "Non-Spicy"],
+        image: "https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=800&auto=format&fit=crop&q=60",
+        ingredients: [
+          "150g tuna belly",
+          "Garlic",
+          "Brown rice",
+          "Water spinach (kangkong)",
+          "Olive oil"
+        ],
+        method: [
+          "Sear tuna belly in olive oil for 2-3 minutes per side.",
+          "Sauté kangkong in garlic.",
+          "Serve with cooked brown rice."
+        ]
+      },
+      {
+        id: 5, plan: "Mutya", name: "Sinigang na Salmon with Cauliflower Rice",
+        desc: "Comforting tamarind soup with fresh salmon, radish, and greens. Served over cauliflower rice to keep carbs minimal.",
+        kcal: 420, protein: 38, carbs: 12, fat: 24,
+        tags: ["Seafood", "Non-Spicy"],
+        image: "https://images.unsplash.com/photo-1551248429-40975aa4de74?w=800&auto=format&fit=crop&q=60",
+        ingredients: [
+          "150g salmon belly",
+          "Tamarind soup base",
+          "Radish",
+          "Okra",
+          "String beans",
+          "Water spinach",
+          "Cauliflower rice",
+          "Tomato",
+          "Onion"
+        ],
+        method: [
+          "Boil water with tamarind base, tomato, and onion.",
+          "Add radish and okra. Cook 5 minutes.",
+          "Add salmon belly and cook for 5 minutes.",
+          "Add string beans and water spinach. Turn off heat.",
+          "Sauté cauliflower rice in garlic and serve on the side."
+        ]
+      },
+      {
+        id: 6, plan: "Mutya", name: "Garlic Butter Shrimp over Zucchini Noodles",
+        desc: "Plump local shrimp sautéed in garlic, butter, and calamansi. Served over fresh zucchini noodles instead of pasta.",
+        kcal: 380, protein: 32, carbs: 9, fat: 24,
+        tags: ["Seafood", "Spicy"],
+        image: "https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=800&auto=format&fit=crop&q=60",
+        ingredients: [
+          "150g shrimp",
+          "Garlic",
+          "Butter",
+          "Calamansi",
+          "Chili flakes",
+          "Zucchini noodles"
+        ],
+        method: [
+          "Sauté shrimp in garlic and butter.",
+          "Add calamansi and chili flakes.",
+          "Toss over zucchini noodles and serve immediately."
+        ]
+      },
+      {
+        id: 7, plan: "Diwata", name: "Ginataang Kalabasa & Malunggay with Mahi-Mahi",
+        desc: "Creamy Bicolano stew. Sweet squash and moringa leaves in coconut milk, paired with a grilled Mahi-Mahi fillet.",
+        kcal: 480, protein: 35, carbs: 22, fat: 28,
+        tags: ["Fish", "Non-Spicy"],
+        image: "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=800&auto=format&fit=crop&q=60",
+        ingredients: [
+          "150g Mahi-Mahi fillet",
+          "1 cup cubed kalabasa",
+          "1/2 cup coconut milk",
+          "1 cup fresh malunggay",
+          "Garlic",
+          "Ginger",
+          "Onion"
+        ],
+        method: [
+          "Sauté garlic, ginger, and onion.",
+          "Add coconut milk and squash. Simmer until soft.",
+          "Add malunggay and turn off heat.",
+          "Grill Mahi-Mahi with salt and pepper. Serve together."
+        ]
+      },
+      {
+        id: 8, plan: "Diwata", name: "Fresh Lumpiang Sariwa with Peanut Sauce",
+        desc: "Vibrant crepe filled with sautéed jicama, carrots, cabbage, and chicken breast, draped in naturally sweetened peanut sauce.",
+        kcal: 450, protein: 30, carbs: 35, fat: 20,
+        tags: ["Chicken", "Non-Spicy"],
+        image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800&auto=format&fit=crop&q=60",
+        ingredients: [
+          "Lumpia wrapper",
+          "Jicama",
+          "Carrots",
+          "Cabbage",
+          "Chicken breast",
+          "Peanut butter",
+          "Dates, for sweetening"
+        ],
+        method: [
+          "Sauté jicama, carrots, cabbage, and chicken.",
+          "Wrap in lumpia wrapper.",
+          "Blend peanut butter, water, and dates for sauce.",
+          "Drizzle sauce over lumpia."
+        ]
+      },
+      {
+        id: 9, plan: "Halaman", name: "Hearty Mushroom & Tofu Adobo",
+        desc: "The Philippines' national dish reimagined. Meaty oyster mushrooms and firm tofu braised in classic soy and vinegar, served with brown rice.",
+        kcal: 520, protein: 25, carbs: 60, fat: 18,
+        tags: ["Vegan", "Soy"],
+        image: "https://images.unsplash.com/photo-1615870216519-2f9fa575fa5c?w=800&auto=format&fit=crop&q=60",
+        ingredients: [
+          "200g oyster mushrooms",
+          "150g firm tofu",
+          "Soy sauce",
+          "Vinegar",
+          "Garlic",
+          "Bay leaves",
+          "Peppercorns",
+          "Brown rice"
+        ],
+        method: [
+          "Sauté tofu until golden.",
+          "Add garlic and mushrooms.",
+          "Pour in soy, vinegar, water, bay leaves, and peppercorns.",
+          "Simmer until sauce reduces. Serve over brown rice."
+        ]
+      },
+      {
+        id: 10, plan: "Halaman", name: "Vegan Kare-Kare with Banana Blossom",
+        desc: "Traditional peanut stew made entirely vegan with eggplant and banana blossom, served with brown rice.",
+        kcal: 550, protein: 20, carbs: 70, fat: 22,
+        tags: ["Vegan", "Peanut"],
+        image: "https://images.unsplash.com/photo-1625944228691-997b74fa5866?w=800&auto=format&fit=crop&q=60",
+        ingredients: [
+          "Eggplant",
+          "Banana blossom",
+          "Peanut butter",
+          "Annatto oil",
+          "Brown rice",
+          "String beans"
+        ],
+        method: [
+          "Simmer peanut butter with water and annatto oil.",
+          "Add eggplant, banana blossom, and string beans.",
+          "Cook until vegetables are tender. Serve with brown rice."
+        ]
+      }
+    ];
+
+    const menuGrid = document.getElementById('menuGrid');
+
+    function renderMenu(filter = 'all') {
+      menuGrid.innerHTML = '';
+      const filteredMeals = filter === 'all' ? menuData : menuData.filter(meal => meal.plan === filter);
+
+      filteredMeals.forEach(meal => {
+        const card = document.createElement('div');
+        card.className = 'meal-card';
+        const fallback = `<div class="meal-img-fallback"><span>${meal.name}</span></div>`;
+        card.innerHTML = `
+          <div class="meal-img">
+            <img src="${meal.image}" alt="${meal.name}" loading="lazy" onerror="this.parentElement.innerHTML='${fallback.replace(/'/g, "\\'")}'" />
+          </div>
+          <div class="meal-content">
+            <div class="meal-plan-tag">${meal.plan} Plan</div>
+            <h3 class="meal-title">${meal.name}</h3>
+            <p class="meal-desc">${meal.desc}</p>
+            <div class="meal-macros">
+              <div class="macro-item">${meal.kcal} <span>Calories</span></div>
+              <div class="macro-item">${meal.protein}g <span>Protein</span></div>
+              <div class="macro-item">${meal.carbs}g <span>Carbs</span></div>
+              <div class="macro-item">${meal.fat}g <span>Fat</span></div>
+            </div>
+            <div class="meal-actions">
+              <button class="btn-card btn-recipe" onclick="openModal(${meal.id})">View Recipe</button>
+              <button class="btn-card btn-add" id="add-btn-${meal.id}" onclick="addToCart(${meal.id})">Add to Plan</button>
+            </div>
+          </div>
+        `;
+        menuGrid.appendChild(card);
+      });
+    }
+
+    function filterMenu(plan, event) {
+      document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+      renderMenu(plan);
+    }
+
+    let cart = 0;
+    function addToCart(id) {
+      cart++;
+      document.getElementById('cartCount').innerText = cart;
+      const btn = document.getElementById(`add-btn-${id}`);
+      if (btn) {
+        btn.innerText = 'Added ✓';
+        btn.classList.add('added');
+        setTimeout(() => {
+          btn.innerText = 'Add to Plan';
+          btn.classList.remove('added');
+        }, 1500);
+      }
+    }
+
+    function openModal(id) {
+      const meal = menuData.find(m => m.id === id);
+      const modalBody = document.getElementById('modalBody');
+      const fallback = `<div class="modal-img-fallback"><span>${meal.name}</span></div>`;
+      modalBody.innerHTML = `
+        <div class="modal-img">
+          <img src="${meal.image}" alt="${meal.name}" onerror="this.parentElement.innerHTML='${fallback.replace(/'/g, "\\'")}'" />
+        </div>
+        <div class="modal-inner">
+          <div class="meal-plan-tag">${meal.plan} Plan</div>
+          <h2>${meal.name}</h2>
+          <div class="modal-tags">
+            ${meal.tags.map(tag => `<span class="modal-tag">${tag}</span>`).join('')}
+            <span class="modal-tag">${meal.kcal} kcal | ${meal.protein}g P | ${meal.carbs}g C | ${meal.fat}g F</span>
+          </div>
+          <p style="font-style: italic; color:#C8C2B5; margin-bottom:18px;">${meal.desc}</p>
+          <div class="recipe-section">
+            <h4>Ingredients</h4>
+            <ul>${meal.ingredients.map(i => `<li>${i}</li>`).join('')}</ul>
+          </div>
+          <div class="recipe-section">
+            <h4>Chef's Instructions</h4>
+            <ol>${meal.method.map(m => `<li>${m}</li>`).join('')}</ol>
+          </div>
+          <button class="btn-card btn-add" style="width:100%; padding:14px; margin-top:10px;" onclick="addToCart(${meal.id}); document.getElementById('recipeModal').classList.remove('active');">Add to My Plan</button>
+        </div>
+      `;
+      document.getElementById('recipeModal').classList.add('active');
+    }
+
+    function closeModal(event) {
+      if (!event || event.target.id === 'recipeModal' || event.target.classList.contains('close-modal')) {
+        document.getElementById('recipeModal')?.classList.remove('active');
+      }
+    }
+
+    renderMenu();
+  </script>
+</body>
+</html>
