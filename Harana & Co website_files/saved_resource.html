@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<!-- saved from url=(0012)about:srcdoc -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+				
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<style>
+					body {
+						background-color: white; /* Ensure the iframe has a white background */
+					}
+				</style>
+				<script>
+					var Z_CDN_WHITELIST = [
+						'cdn.jsdelivr.net',
+						'cdnjs.cloudflare.com',
+						'cdn.tailwindcss.com',
+						'unpkg.com',
+						'fonts.googleapis.com',
+						'd3js.org',
+						'cdn.babylonjs.com',
+						'html2canvas.hertzen.com',
+						'code.jquery.com',
+						'cdn.datatables.net',
+						'kit.fontawesome.com',
+						'code.createjs.com',
+						'cdn.plot.ly',
+						'fonts.gstatic.com',
+						'www.rgraph.net',
+						'api.mapbox.com',
+						'polyfill.io',
+						'cdn.quilljs.com',
+						'picsum.photos',
+						'esm.sh'
+					];
+
+					function z_isUrlInWhitelist(url) {
+						if (!url || typeof url !== 'string') {
+							return false;
+						}
+						try {
+							const urlObj = new URL(url);
+							const hostname = urlObj.hostname;
+							return Z_CDN_WHITELIST.some(domain => hostname === domain);
+						} catch (e) {
+							return false;
+						}
+					}
+
+						function z_proxyCdnUrl(url) {
+						if (!url || !url.startsWith('http')) {
+							return url;
+						}
+							if (!z_isUrlInWhitelist(url)) {
+							return url;
+						}
+						if (!url.startsWith('https://artifacts-cdn.chatglm.site/')) {
+							return 'https://artifacts-cdn.chatglm.site/' + url;
+						}
+						return url;
+					}
+					
+					// 增强版外部链接拦截 - 适合放在模板字符串中
+					document.addEventListener('click', function (ev) {
+						try {
+							const anchor = ev.target?.closest?.('a[href]') || null;
+							if (!anchor) return;
+
+							let href = anchor.getAttribute('href')?.trim() || '';
+							if (!href) return;
+
+							if (href.startsWith('javascript:')) return;
+
+							// 新需求：href="#" 的链接完全阻止跳转和任何行为
+							if (href === '#') {
+								ev.preventDefault();
+								return;
+							}
+
+							// 处理其他内部锚点（如 #about、#contact 等）
+							if (href.startsWith('#')) {
+								const rawId = href.slice(1);
+								if (!rawId) return;
+
+								const id = decodeURIComponent(rawId);
+								const target = 
+									document.getElementById(id) ||
+									document.querySelector('a[name="' + id.replace(/"/g, '\"') + '"]') ||
+									document.querySelector('[name="' + id.replace(/"/g, '\"') + '"]');
+
+								if (target && target.scrollIntoView) {
+									ev.preventDefault();
+									try {
+										history.pushState(null, '', href);
+									} catch (e) {}
+									target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+								}
+								return;
+							}
+
+							// 处理外部链接
+							let url;
+							try {
+								url = new URL(href, window.location.href);
+							} catch (e) {
+								return;
+							}
+
+							if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
+							const isExternal = url.hostname !== window.location.hostname;
+
+							if (isExternal || anchor.getAttribute('target') === '_blank') {
+								ev.preventDefault();
+								window.open(url.toString(), '_blank', 'noopener,noreferrer');
+							}
+
+						} catch (e) {
+							// 出错时不阻止默认行为
+						}
+					}, true);
+
+					// 1. 暴力清除函数：从 DOM 层面抹除 onclick 属性
+					var Z_removeInlineOnclick = function () {
+						// 专门锁定 href="#" 且带有 onclick 的 a 标签
+						const targetedLinks = document.querySelectorAll('a[href="#"][onclick]');
+						for (let i = 0; i < targetedLinks.length; i++) {
+							targetedLinks[i].removeAttribute('onclick');
+							targetedLinks[i].onclick = null; // 确保 JS 层的赋值也被清理
+						}
+					};
+					// 3. 动态监测：防止页面通过异步加载重新生成带 onclick 的元素
+					var z_observer = new MutationObserver(function () {
+						Z_removeInlineOnclick();
+					});
+
+					z_observer.observe(document.documentElement, {
+						childList: true,
+						subtree: true,
+						attributes: true,
+						attributeFilter: ['onclick']
+					});
+
+					// 4. 初始化执行一次
+					Z_removeInlineOnclick();
+
+					const Z_rawCreateElement = document.createElement;
+
+					document.createElement = function (tagName, ...args) {
+						const el = Z_rawCreateElement.call(this, tagName, ...args);
+
+						if (tagName.toLowerCase() === 'script') {
+							const rawSetAttribute = el.setAttribute;
+							const rawGetAttribute = el.getAttribute;
+							let srcValue = '';
+							
+							el.setAttribute = function (name, value) {
+								if (name === 'src' && typeof value === 'string') {
+									value = z_proxyCdnUrl(value);
+									srcValue = value;
+								}
+								return rawSetAttribute.call(this, name, value);
+							};
+
+							Object.defineProperty(el, 'src', {
+								get: function() {
+									return srcValue || rawGetAttribute.call(this, 'src') || '';
+								},
+								set: function(value) {
+									if (typeof value === 'string') {
+										srcValue = z_proxyCdnUrl(value);
+										rawSetAttribute.call(this, 'src', srcValue);
+									} else {
+										srcValue = value;
+									}
+								},
+								configurable: true,
+								enumerable: true
+							});
+						}
+
+						if (tagName.toLowerCase() === 'link') {
+							const rawSetAttribute = el.setAttribute;
+							const rawGetAttribute = el.getAttribute;
+							let hrefValue = '';
+							
+							el.setAttribute = function (name, value) {
+								if (name === 'href' && typeof value === 'string') {
+									value = z_proxyCdnUrl(value);
+									hrefValue = value;
+								}
+								return rawSetAttribute.call(this, name, value);
+							};
+
+							Object.defineProperty(el, 'href', {
+								get: function() {
+									return hrefValue || rawGetAttribute.call(this, 'href') || '';
+								},
+								set: function(value) {
+									if (typeof value === 'string') {
+										hrefValue = z_proxyCdnUrl(value);
+										rawSetAttribute.call(this, 'href', hrefValue);
+									} else {
+										hrefValue = value;
+									}
+								},
+								configurable: true,
+								enumerable: true
+							});
+						}
+
+						return el;
+					};
+
+					const Z_OriginalXMLHttpRequest = window.XMLHttpRequest;
+					window.XMLHttpRequest = function (...args) {
+						const xhr = new Z_OriginalXMLHttpRequest(...args);
+						const rawOpen = xhr.open;
+
+						xhr.open = function (method, url, ...rest) {
+							if (typeof url === 'string') {
+								const methodUpper = (method || '').toUpperCase();
+								if (methodUpper === 'GET' && z_isUrlInWhitelist(url)) {
+									url = z_proxyCdnUrl(url);
+								}
+							}
+							return rawOpen.call(this, method, url, ...rest);
+						};
+
+						return xhr;
+					};
+
+					window.XMLHttpRequest.prototype = Z_OriginalXMLHttpRequest.prototype;
+					Object.setPrototypeOf(window.XMLHttpRequest, Z_OriginalXMLHttpRequest);
+
+					const z_originalFetch = window.fetch;
+					window.fetch = async function (...args) {
+						if (args.length > 0) {
+							let url = '';
+							let method = 'GET';
+							
+							if (typeof args[0] === 'string') {
+								url = args[0];
+								if (args[1] && args[1].method) {
+									method = args[1].method.toUpperCase();
+								}
+								if (method === 'GET' && z_isUrlInWhitelist(url)) {
+									args[0] = z_proxyCdnUrl(url);
+								}
+							} else if (args[0] instanceof Request) {
+								const originalUrl = args[0].url;
+								method = (args[0].method || 'GET').toUpperCase();
+								if (method === 'GET' && z_isUrlInWhitelist(originalUrl)) {
+									const proxiedUrl = z_proxyCdnUrl(originalUrl);
+									if (proxiedUrl !== originalUrl) {
+										args[0] = new Request(proxiedUrl, args[0]);
+									}
+								}
+							}
+						}
+						return z_originalFetch.apply(this, args);
+					};
+				</script>
+			</head>
+			<body>
+				
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harana &amp; Co. - The Heritage Menu</title>
+    <style>
+        :root {
+            --barako-brown: #2C241B;
+            --maharlika-gold: #C5A059;
+            --calamansi-cream: #F9F7F2;
+            --baybayin-indigo: #2B3A55;
+            --white: #FFFFFF;
+            --light-gray: #f0f0f0;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--calamansi-cream);
+            color: var(--barako-brown);
+            line-height: 1.6;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Georgia', serif;
+            font-weight: normal;
+        }
+
+        /* Navigation */
+        header {
+            background-color: var(--white);
+            padding: 20px 50px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #E6E2D8;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        
+        .logo {
+            font-family: 'Georgia', serif;
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--barako-brown);
+            letter-spacing: 1px;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 30px;
+            margin: 0;
+            padding: 0;
+        }
+
+        nav a {
+            text-decoration: none;
+            color: var(--barako-brown);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        nav a:hover { color: var(--maharlika-gold); }
+
+        .cart-icon {
+            font-size: 20px;
+            cursor: pointer;
+            position: relative;
+        }
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--maharlika-gold);
+            color: var(--barako-brown);
+            font-size: 10px;
+            font-weight: bold;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Hero Banner */
+        .page-hero {
+            text-align: center;
+            padding: 60px 20px 40px;
+            background-color: var(--calamansi-cream);
+        }
+        .page-hero h1 { font-size: 42px; margin: 0 0 10px; color: var(--barako-brown); }
+        .page-hero p { font-size: 16px; color: #666; max-width: 600px; margin: 0 auto; }
+
+        /* Filters */
+        .filters {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 30px 20px;
+            flex-wrap: wrap;
+        }
+        .filter-btn {
+            background: transparent;
+            border: 1px solid var(--barako-brown);
+            color: var(--barako-brown);
+            padding: 10px 25px;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-family: 'Georgia', serif;
+        }
+        .filter-btn:hover, .filter-btn.active {
+            background: var(--barako-brown);
+            color: var(--white);
+        }
+
+        /* Menu Grid */
+        .menu-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 50px 80px;
+        }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .meal-card {
+            background: var(--white);
+            border: 1px solid #E6E2D8;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .meal-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+        }
+        
+        /* Elegant CSS Image Placeholder */
+        .meal-img {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #e6dacd 0%, #d4c4b1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            border-bottom: 1px solid #E6E2D8;
+        }
+        .meal-img span {
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            color: #8a7a65;
+            font-size: 16px;
+        }
+
+        .meal-content {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .meal-plan-tag {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--maharlika-gold);
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .meal-title {
+            font-size: 18px;
+            margin: 0 0 10px;
+            color: var(--baybayin-indigo);
+        }
+        .meal-desc {
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 15px;
+            flex-grow: 1;
+        }
+        .meal-macros {
+            display: flex;
+            gap: 10px;
+            font-size: 11px;
+            font-weight: bold;
+            color: var(--barako-brown);
+            border-top: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            padding: 10px 0;
+            margin-bottom: 15px;
+            justify-content: space-between;
+        }
+        .macro-item { text-align: center; }
+        .macro-item span { display: block; font-size: 9px; font-weight: normal; color: #888; text-transform: uppercase; }
+
+        .meal-actions {
+            display: flex;
+            gap: 10px;
+        }
+        .btn-card {
+            padding: 10px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            border: none;
+            flex: 1;
+            transition: 0.3s;
+        }
+        .btn-recipe {
+            background: transparent;
+            border: 1px solid var(--barako-brown);
+            color: var(--barako-brown);
+        }
+        .btn-recipe:hover { background: var(--barako-brown); color: var(--white); }
+        .btn-add {
+            background: var(--maharlika-gold);
+            color: var(--barako-brown);
+            font-weight: bold;
+        }
+        .btn-add:hover { background: var(--barako-brown); color: var(--white); }
+        .btn-add.added { background: #4CAF50; color: white; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(44, 36, 27, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            padding: 20px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: var(--white);
+            max-width: 600px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            animation: slideUp 0.4s ease;
+        }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        .modal-img {
+            width: 100%;
+            height: 250px;
+            background: linear-gradient(135deg, #e6dacd 0%, #d4c4b1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .modal-img span {
+            font-family: 'Georgia', serif;
+            font-style: italic;
+            color: #8a7a65;
+            font-size: 24px;
+        }
+        
+        .modal-inner {
+            padding: 40px;
+        }
+        .close-modal {
+            position: absolute;
+            top: 15px; right: 20px;
+            font-size: 30px;
+            cursor: pointer;
+            color: var(--barako-brown);
+            line-height: 1;
+            z-index: 10;
+            background: rgba(255,255,255,0.8);
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content h2 { color: var(--baybayin-indigo); margin-top: 0; }
+        .modal-tags { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .modal-tag { font-size: 10px; background: var(--calamansi-cream); padding: 4px 10px; border: 1px solid #ddd; }
+        
+        .recipe-section { margin-bottom: 20px; }
+        .recipe-section h4 { color: var(--barako-brown); border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; }
+        .recipe-section ul, .recipe-section ol { padding-left: 20px; font-size: 14px; color: #555; }
+        .recipe-section li { margin-bottom: 8px; }
+
+    </style>
+
+
+
+    <header>
+        <div class="logo">Harana &amp; Co.</div>
+        <nav>
+            <ul>
+                <li><a href="https://chat.z.ai/c/4fe69f64-e406-4ae4-9cba-e5630524c97a#">Home</a></li>
+                <li><a href="https://chat.z.ai/c/4fe69f64-e406-4ae4-9cba-e5630524c97a#" style="color: var(--maharlika-gold);">The Menu</a></li>
+                <li><a href="https://chat.z.ai/c/4fe69f64-e406-4ae4-9cba-e5630524c97a#">How It Works</a></li>
+                <li><a href="https://chat.z.ai/c/4fe69f64-e406-4ae4-9cba-e5630524c97a#">Our Heritage</a></li>
+            </ul>
+        </nav>
+        <div class="cart-icon">🛒 <span class="cart-count" id="cartCount">0</span></div>
+    </header>
+
+    <div class="page-hero">
+        <h1>The Heritage Menu</h1>
+        <p>Traditional Filipino flavors, expertly balanced for your modern health goals. Choose your plan and explore our chef-crafted meals.</p>
+    </div>
+
+    <div class="filters">
+        <button class="filter-btn active" onclick="filterMenu(&#39;all&#39;, event)">All Meals</button>
+        <button class="filter-btn" onclick="filterMenu(&#39;Makata&#39;, event)">Makata (Bulk)</button>
+        <button class="filter-btn" onclick="filterMenu(&#39;Lakan&#39;, event)">Lakan (Performance)</button>
+        <button class="filter-btn" onclick="filterMenu(&#39;Mutya&#39;, event)">Mutya (Lean)</button>
+        <button class="filter-btn" onclick="filterMenu(&#39;Diwata&#39;, event)">Diwata (Glow)</button>
+        <button class="filter-btn" onclick="filterMenu(&#39;Halaman&#39;, event)">Halaman (Vegan)</button>
+    </div>
+
+    <div class="menu-container">
+        <div class="menu-grid" id="menuGrid"><div class="meal-card">
+                    <div class="meal-img"><span>Slow-Braised Beef Kaldereta</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Slow-Braised Beef Kaldereta</h3>
+                        <p class="meal-desc">A timeless Filipino fiesta favorite. Slow-braised premium beef in a rich tomato sauce with olives and peppers, served over organic red rice.</p>
+                        
+                        <div class="meal-macros">
+                            <div class="macro-item">850 <span>Calories</span></div>
+                            <div class="macro-item">55g <span>Protein</span></div>
+                            <div class="macro-item">65g <span>Carbs</span></div>
+                            <div class="macro-item">38g <span>Fat</span></div>
+                        </div>
+
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(1)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-1" onclick="addToCart(1)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Sweet &amp; Savory Pork Humba</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Sweet &amp; Savory Pork Humba</h3>
+                        <p class="meal-desc">Comforting Visayan classic. Pork belly braised in soy, vinegar, and black beans, paired with high-protein quinoa and a boiled egg.</p>
+                        
+                        <div class="meal-macros">
+                            <div class="macro-item">920 <span>Calories</span></div>
+                            <div class="macro-item">60g <span>Protein</span></div>
+                            <div class="macro-item">70g <span>Carbs</span></div>
+                            <div class="macro-item">42g <span>Fat</span></div>
+                        </div>
+
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(2)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-2" onclick="addToCart(2)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Charred Chicken Inasal</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Charred Chicken Inasal</h3>
+                        <p class="meal-desc">The pride of Bacolod. Chicken marinated 24hrs in lemongrass and calamansi, grilled to perfection. Served with Java rice and fresh atchara.</p>
+                        
+                        <div class="meal-macros">
+                            <div class="macro-item">650 <span>Calories</span></div>
+                            <div class="macro-item">48g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">22g <span>Fat</span></div>
+                        </div>
+
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(3)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-3" onclick="addToCart(3)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Seared Tuna Belly with Kangkong</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Seared Tuna Belly with Kangkong</h3>
+                        <p class="meal-desc">Omega-3 rich tuna belly lightly seared, served with garlic brown rice and sautéed water spinach.</p>
+                        
+                        <div class="meal-macros">
+                            <div class="macro-item">580 <span>Calories</span></div>
+                            <div class="macro-item">45g <span>Protein</span></div>
+                            <div class="macro-item">50g <span>Carbs</span></div>
+                            <div class="macro-item">18g <span>Fat</span></div>
+                        </div>
+
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(4)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-4" onclick="addToCart(4)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Sinigang na Salmon with Cauliflower Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Sinigang na Salmon with Cauliflower Rice</h3>
+                        <p class="meal-desc">Comforting tamarind soup with fresh salmon, radish, and greens. Served over cauliflower rice to keep carbs minimal.</p>
+                        
+                        <div class="meal-macros">
+                            <div class="macro-item">420 <span>Calories</span></div>
+                            <div class="macro-item">38g <span>Protein</span></div>
+                            <div class="macro-item">12g <span>Carbs</span></div>
+                            <div class="macro-item">24g <span>Fat</span></div>
+                        </div>
+
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(5)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-5" onclick="addToCart(5)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Garlic Butter Shrimp over Zucchini Noodles</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Garlic Butter Shrimp over Zucchini Noodles</h3>
+                        <p class="meal-desc">Plump local shrimp sautéed in garlic, butter, and calamansi. Served over fresh zucchini noodles instead of pasta.</p>
+                        
+                        <div class="meal-macros">
+                            <div class="macro-item">380 <span>Calories</span></div>
+                            <div class="macro-item">32g <span>Protein</span></div>
+                            <div class="macro-item">9g <span>Carbs</span></div>
+                            <div class="macro-item">24g <span>Fat</span></div>
+                        </div>
+
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(6)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-6" onclick="addToCart(6)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Ginataang Kalabasa &amp; Malunggay with Mahi-Mahi</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Ginataang Kalabasa &amp; Malunggay with Mahi-Mahi</h3>
+                        <p class="meal-desc">Creamy Bicolano stew. Sweet squash and moringa leaves in coconut milk, paired with a grilled Mahi-Mahi fillet.</p>
+                        
+                        <div class="meal-macros">
+                            <div class="macro-item">480 <span>Calories</span></div>
+                            <div class="macro-item">35g <span>Protein</span></div>
+                            <div class="macro-item">22g <span>Carbs</span></div>
+                            <div class="macro-item">28g <span>Fat</span></div>
+                        </div>
+
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(7)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-7" onclick="addToCart(7)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Fresh Lumpiang Sariwa with Peanut Sauce</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Fresh Lumpiang Sariwa with Peanut Sauce</h3>
+                        <p class="meal-desc">Vibrant crepe filled with sautéed jicama, carrots, cabbage, and chicken breast, draped in naturally sweetened peanut sauce.</p>
+                        
+                        <div class="meal-macros">
+                            <div class="macro-item">450 <span>Calories</span></div>
+                            <div class="macro-item">30g <span>Protein</span></div>
+                            <div class="macro-item">35g <span>Carbs</span></div>
+                            <div class="macro-item">20g <span>Fat</span></div>
+                        </div>
+
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(8)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-8" onclick="addToCart(8)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Hearty Mushroom &amp; Tofu Adobo</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Hearty Mushroom &amp; Tofu Adobo</h3>
+                        <p class="meal-desc">The Philippines' national dish reimagined. Meaty oyster mushrooms and firm tofu braised in classic soy and vinegar, served with brown rice.</p>
+                        
+                        <div class="meal-macros">
+                            <div class="macro-item">520 <span>Calories</span></div>
+                            <div class="macro-item">25g <span>Protein</span></div>
+                            <div class="macro-item">60g <span>Carbs</span></div>
+                            <div class="macro-item">18g <span>Fat</span></div>
+                        </div>
+
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(9)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-9" onclick="addToCart(9)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Vegan Kare-Kare with Banana Blossom</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Vegan Kare-Kare with Banana Blossom</h3>
+                        <p class="meal-desc">Traditional peanut stew made entirely vegan with eggplant and banana blossom, served with brown rice.</p>
+                        
+                        <div class="meal-macros">
+                            <div class="macro-item">550 <span>Calories</span></div>
+                            <div class="macro-item">20g <span>Protein</span></div>
+                            <div class="macro-item">70g <span>Carbs</span></div>
+                            <div class="macro-item">22g <span>Fat</span></div>
+                        </div>
+
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(10)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-10" onclick="addToCart(10)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div></div>
+    </div>
+
+    <!-- Recipe Modal -->
+    <div class="modal-overlay" id="recipeModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-modal" onclick="closeModal()">×</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- THE HARANA & CO. MENU DATA ---
+        const menuData = [
+            {
+                id: 1, plan: "Makata", name: "Slow-Braised Beef Kaldereta", 
+                desc: "A timeless Filipino fiesta favorite. Slow-braised premium beef in a rich tomato sauce with olives and peppers, served over organic red rice.",
+                kcal: 850, protein: 55, carbs: 65, fat: 38,
+                tags: ["Beef", "Non-Spicy"],
+                ingredients: ["200g premium beef chuck", "1 cup tomato sauce", "1/2 cup liver spread", "1 large potato (cubed)", "1 carrot", "1 red bell pepper", "1 cup organic red rice", "Olive oil, garlic, onion, bay leaves"],
+                method: ["Sear beef in olive oil until browned.", "Sauté garlic, onion, and tomato sauce.", "Add beef, liver spread, bay leaves, and water. Simmer for 2 hours until tender.", "Add potatoes, carrots, and bell peppers. Cook until veg is soft.", "Serve hot over cooked organic red rice."]
+            },
+            {
+                id: 2, plan: "Makata", name: "Sweet & Savory Pork Humba", 
+                desc: "Comforting Visayan classic. Pork belly braised in soy, vinegar, and black beans, paired with high-protein quinoa and a boiled egg.",
+                kcal: 920, protein: 60, carbs: 70, fat: 42, tags: ["Pork", "Non-Spicy"],
+                ingredients: ["200g pork belly", "Soy sauce", "Vinegar", "Black beans", "Banana blossoms", "Quinoa", "1 Hard-boiled egg"],
+                method: ["Braise pork in soy, vinegar, and black beans until tender.", "Add banana blossoms in the last 30 minutes.", "Serve over cooked quinoa with a halved hard-boiled egg."]
+            },
+            {
+                id: 3, plan: "Lakan", name: "Charred Chicken Inasal", 
+                desc: "The pride of Bacolod. Chicken marinated 24hrs in lemongrass and calamansi, grilled to perfection. Served with Java rice and fresh atchara.",
+                kcal: 650, protein: 48, carbs: 55, fat: 22, tags: ["Chicken", "Non-Spicy"],
+                ingredients: ["200g chicken thigh", "Lemongrass", "Calamansi", "Ginger", "Annatto oil", "Jasmine rice", "Papaya", "Carrots", "Vinegar"],
+                method: ["Marinate chicken in lemongrass, calamansi, ginger, and annatto for 24 hrs.", "Grill until charred and cooked through.", "Cook rice with annatto oil for Java rice.", "Serve with fresh papaya atchara."]
+            },
+            {
+                id: 4, plan: "Lakan", name: "Seared Tuna Belly with Kangkong", 
+                desc: "Omega-3 rich tuna belly lightly seared, served with garlic brown rice and sautéed water spinach.",
+                kcal: 580, protein: 45, carbs: 50, fat: 18, tags: ["Seafood", "Non-Spicy"],
+                ingredients: ["150g Tuna belly", "Garlic", "Brown rice", "Water spinach (Kangkong)", "Olive oil"],
+                method: ["Sear tuna belly in olive oil for 2-3 mins per side.", "Sauté kangkong in garlic.", "Serve with cooked brown rice."]
+            },
+            {
+                id: 5, plan: "Mutya", name: "Sinigang na Salmon with Cauliflower Rice", 
+                desc: "Comforting tamarind soup with fresh salmon, radish, and greens. Served over cauliflower rice to keep carbs minimal.",
+                kcal: 420, protein: 38, carbs: 12, fat: 24, tags: ["Seafood", "Non-Spicy"],
+                ingredients: ["150g salmon belly", "Tamarind soup base", "Radish", "Okra", "String beans", "Water spinach", "Cauliflower rice", "Tomato", "Onion"],
+                method: ["Boil water with tamarind base, tomato, and onion.", "Add radish and okra. Cook 5 mins.", "Add salmon belly and cook for 5 mins.", "Add string beans and water spinach. Turn off heat.", "Sauté cauliflower rice in garlic and serve on the side."]
+            },
+            {
+                id: 6, plan: "Mutya", name: "Garlic Butter Shrimp over Zucchini Noodles", 
+                desc: "Plump local shrimp sautéed in garlic, butter, and calamansi. Served over fresh zucchini noodles instead of pasta.",
+                kcal: 380, protein: 32, carbs: 9, fat: 24, tags: ["Seafood", "Spicy"],
+                ingredients: ["150g shrimp", "Garlic", "Butter", "Calamansi", "Chili flakes", "Zucchini noodles"],
+                method: ["Sauté shrimp in garlic and butter.", "Add calamansi and chili flakes.", "Toss over zucchini noodles and serve immediately."]
+            },
+            {
+                id: 7, plan: "Diwata", name: "Ginataang Kalabasa & Malunggay with Mahi-Mahi", 
+                desc: "Creamy Bicolano stew. Sweet squash and moringa leaves in coconut milk, paired with a grilled Mahi-Mahi fillet.",
+                kcal: 480, protein: 35, carbs: 22, fat: 28, tags: ["Fish", "Non-Spicy"],
+                ingredients: ["150g Mahi-Mahi fillet", "1 cup cubed kalabasa", "1/2 cup coconut milk", "1 cup fresh malunggay", "Garlic", "Ginger", "Onion"],
+                method: ["Sauté garlic, ginger, and onion.", "Add coconut milk and squash. Simmer until soft.", "Add malunggay and turn off heat.", "Grill Mahi-Mahi with salt and pepper. Serve together."]
+            },
+            {
+                id: 8, plan: "Diwata", name: "Fresh Lumpiang Sariwa with Peanut Sauce", 
+                desc: "Vibrant crepe filled with sautéed jicama, carrots, cabbage, and chicken breast, draped in naturally sweetened peanut sauce.",
+                kcal: 450, protein: 30, carbs: 35, fat: 20, tags: ["Chicken", "Non-Spicy"],
+                ingredients: ["Lumpia wrapper", "Jicama", "Carrots", "Cabbage", "Chicken breast", "Peanut butter", "Dates (for sweetening)"],
+                method: ["Sauté jicama, carrots, cabbage, and chicken.", "Wrap in lumpia wrapper.", "Blend peanut butter, water, and dates for sauce.", "Drizzle sauce over lumpia."]
+            },
+            {
+                id: 9, plan: "Halaman", name: "Hearty Mushroom & Tofu Adobo", 
+                desc: "The Philippines' national dish reimagined. Meaty oyster mushrooms and firm tofu braised in classic soy and vinegar, served with brown rice.",
+                kcal: 520, protein: 25, carbs: 60, fat: 18, tags: ["Vegan", "Soy"],
+                ingredients: ["200g oyster mushrooms", "150g firm tofu", "Soy sauce", "Vinegar", "Garlic", "Bay leaves", "Peppercorns", "Brown rice"],
+                method: ["Sauté tofu until golden.", "Add garlic and mushrooms.", "Pour in soy, vinegar, water, bay leaves, and peppercorns.", "Simmer until sauce reduces. Serve over brown rice."]
+            },
+            {
+                id: 10, plan: "Halaman", name: "Vegan Kare-Kare with Banana Blossom", 
+                desc: "Traditional peanut stew made entirely vegan with eggplant and banana blossom, served with brown rice.",
+                kcal: 550, protein: 20, carbs: 70, fat: 22, tags: ["Vegan", "Peanut"],
+                ingredients: ["Eggplant", "Banana blossom", "Peanut butter", "Annatto oil", "Brown rice", "String beans"],
+                method: ["Simmer peanut butter with water and annatto oil.", "Add eggplant, banana blossom, and string beans.", "Cook until vegetables are tender. Serve with brown rice."]
+            }
+        ];
+
+        let cart = 0;
+
+        // --- RENDER LOGIC ---
+        const menuGrid = document.getElementById('menuGrid');
+
+        function renderMenu(filter = 'all') {
+            menuGrid.innerHTML = '';
+            const filteredMeals = filter === 'all' ? menuData : menuData.filter(meal => meal.plan === filter);
+
+            filteredMeals.forEach(meal => {
+                const card = document.createElement('div');
+                card.className = 'meal-card';
+                card.innerHTML = `
+                    <div class="meal-img"><span>${meal.name}</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">${meal.plan} Plan</div>
+                        <h3 class="meal-title">${meal.name}</h3>
+                        <p class="meal-desc">${meal.desc}</p>
+                        
+                        <div class="meal-macros">
+                            <div class="macro-item">${meal.kcal} <span>Calories</span></div>
+                            <div class="macro-item">${meal.protein}g <span>Protein</span></div>
+                            <div class="macro-item">${meal.carbs}g <span>Carbs</span></div>
+                            <div class="macro-item">${meal.fat}g <span>Fat</span></div>
+                        </div>
+
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(${meal.id})">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-${meal.id}" onclick="addToCart(${meal.id})">Add to Plan</button>
+                        </div>
+                    </div>
+                `;
+                menuGrid.appendChild(card);
+            });
+        }
+
+        // --- FILTER LOGIC ---
+        function filterMenu(plan, event) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderMenu(plan);
+        }
+
+        // --- CART LOGIC ---
+        function addToCart(id) {
+            cart++;
+            document.getElementById('cartCount').innerText = cart;
+            
+            // Visual feedback
+            const btn = document.getElementById(`add-btn-${id}`);
+            if (btn) {
+                btn.innerText = "Added! ✓";
+                btn.classList.add('added');
+                
+                setTimeout(() => {
+                    btn.innerText = "Add to Plan";
+                    btn.classList.remove('added');
+                }, 1500);
+            }
+        }
+
+        // --- MODAL LOGIC ---
+        function openModal(id) {
+            const meal = menuData.find(m => m.id === id);
+            const modalBody = document.getElementById('modalBody');
+            
+            modalBody.innerHTML = `
+                <div class="modal-img"><span>${meal.name}</span></div>
+                <div class="modal-inner">
+                    <div class="meal-plan-tag">${meal.plan} Plan</div>
+                    <h2>${meal.name}</h2>
+                    <div class="modal-tags">
+                        ${meal.tags.map(tag => `<span class="modal-tag">${tag}</span>`).join('')}
+                        <span class="modal-tag">${meal.kcal} kcal | ${meal.protein}g P | ${meal.carbs}g C | ${meal.fat}g F</span>
+                    </div>
+                    <p style="font-style: italic; color: #555; margin-bottom: 20px;">${meal.desc}</p>
+                    
+                    <div class="recipe-section">
+                        <h4>Ingredients</h4>
+                        <ul>${meal.ingredients.map(i => `<li>${i}</li>`).join('')}</ul>
+                    </div>
+                    
+                    <div class="recipe-section">
+                        <h4>Chef's Instructions</h4>
+                        <ol>${meal.method.map(m => `<li>${m}</li>`).join('')}</ol>
+                    </div>
+                    
+                    <button class="btn-card btn-add" style="width: 100%; padding: 15px; margin-top: 10px;" onclick="addToCart(${meal.id}); document.getElementById('recipeModal').classList.remove('active');">Add to My Plan</button>
+                </div>
+            `;
+            
+            document.getElementById('recipeModal').classList.add('active');
+        }
+
+        function closeModal(event) {
+            if (event.target.id === 'recipeModal' || event.target.classList.contains('close-modal')) {
+                document.getElementById('recipeModal').classList.remove('active');
+            }
+        }
+
+        // Initialize menu on load
+        renderMenu();
+    </script>
+			
+		
+</body></html>

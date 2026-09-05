@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<!-- saved from url=(0012)about:srcdoc -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+				
+				<meta name="viewport" content="width=device-width, initial-scale=1.0">
+				<style>
+					body {
+						background-color: white; /* Ensure the iframe has a white background */
+					}
+				</style>
+				<script>
+					var Z_CDN_WHITELIST = [
+						'cdn.jsdelivr.net',
+						'cdnjs.cloudflare.com',
+						'cdn.tailwindcss.com',
+						'unpkg.com',
+						'fonts.googleapis.com',
+						'd3js.org',
+						'cdn.babylonjs.com',
+						'html2canvas.hertzen.com',
+						'code.jquery.com',
+						'cdn.datatables.net',
+						'kit.fontawesome.com',
+						'code.createjs.com',
+						'cdn.plot.ly',
+						'fonts.gstatic.com',
+						'www.rgraph.net',
+						'api.mapbox.com',
+						'polyfill.io',
+						'cdn.quilljs.com',
+						'picsum.photos',
+						'esm.sh'
+					];
+
+					function z_isUrlInWhitelist(url) {
+						if (!url || typeof url !== 'string') {
+							return false;
+						}
+						try {
+							const urlObj = new URL(url);
+							const hostname = urlObj.hostname;
+							return Z_CDN_WHITELIST.some(domain => hostname === domain);
+						} catch (e) {
+							return false;
+						}
+					}
+
+						function z_proxyCdnUrl(url) {
+						if (!url || !url.startsWith('http')) {
+							return url;
+						}
+							if (!z_isUrlInWhitelist(url)) {
+							return url;
+						}
+						if (!url.startsWith('https://artifacts-cdn.chatglm.site/')) {
+							return 'https://artifacts-cdn.chatglm.site/' + url;
+						}
+						return url;
+					}
+					
+					// 增强版外部链接拦截 - 适合放在模板字符串中
+					document.addEventListener('click', function (ev) {
+						try {
+							const anchor = ev.target?.closest?.('a[href]') || null;
+							if (!anchor) return;
+
+							let href = anchor.getAttribute('href')?.trim() || '';
+							if (!href) return;
+
+							if (href.startsWith('javascript:')) return;
+
+							// 新需求：href="#" 的链接完全阻止跳转和任何行为
+							if (href === '#') {
+								ev.preventDefault();
+								return;
+							}
+
+							// 处理其他内部锚点（如 #about、#contact 等）
+							if (href.startsWith('#')) {
+								const rawId = href.slice(1);
+								if (!rawId) return;
+
+								const id = decodeURIComponent(rawId);
+								const target = 
+									document.getElementById(id) ||
+									document.querySelector('a[name="' + id.replace(/"/g, '\"') + '"]') ||
+									document.querySelector('[name="' + id.replace(/"/g, '\"') + '"]');
+
+								if (target && target.scrollIntoView) {
+									ev.preventDefault();
+									try {
+										history.pushState(null, '', href);
+									} catch (e) {}
+									target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+								}
+								return;
+							}
+
+							// 处理外部链接
+							let url;
+							try {
+								url = new URL(href, window.location.href);
+							} catch (e) {
+								return;
+							}
+
+							if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
+							const isExternal = url.hostname !== window.location.hostname;
+
+							if (isExternal || anchor.getAttribute('target') === '_blank') {
+								ev.preventDefault();
+								window.open(url.toString(), '_blank', 'noopener,noreferrer');
+							}
+
+						} catch (e) {
+							// 出错时不阻止默认行为
+						}
+					}, true);
+
+					// 1. 暴力清除函数：从 DOM 层面抹除 onclick 属性
+					var Z_removeInlineOnclick = function () {
+						// 专门锁定 href="#" 且带有 onclick 的 a 标签
+						const targetedLinks = document.querySelectorAll('a[href="#"][onclick]');
+						for (let i = 0; i < targetedLinks.length; i++) {
+							targetedLinks[i].removeAttribute('onclick');
+							targetedLinks[i].onclick = null; // 确保 JS 层的赋值也被清理
+						}
+					};
+					// 3. 动态监测：防止页面通过异步加载重新生成带 onclick 的元素
+					var z_observer = new MutationObserver(function () {
+						Z_removeInlineOnclick();
+					});
+
+					z_observer.observe(document.documentElement, {
+						childList: true,
+						subtree: true,
+						attributes: true,
+						attributeFilter: ['onclick']
+					});
+
+					// 4. 初始化执行一次
+					Z_removeInlineOnclick();
+
+					const Z_rawCreateElement = document.createElement;
+
+					document.createElement = function (tagName, ...args) {
+						const el = Z_rawCreateElement.call(this, tagName, ...args);
+
+						if (tagName.toLowerCase() === 'script') {
+							const rawSetAttribute = el.setAttribute;
+							const rawGetAttribute = el.getAttribute;
+							let srcValue = '';
+							
+							el.setAttribute = function (name, value) {
+								if (name === 'src' && typeof value === 'string') {
+									value = z_proxyCdnUrl(value);
+									srcValue = value;
+								}
+								return rawSetAttribute.call(this, name, value);
+							};
+
+							Object.defineProperty(el, 'src', {
+								get: function() {
+									return srcValue || rawGetAttribute.call(this, 'src') || '';
+								},
+								set: function(value) {
+									if (typeof value === 'string') {
+										srcValue = z_proxyCdnUrl(value);
+										rawSetAttribute.call(this, 'src', srcValue);
+									} else {
+										srcValue = value;
+									}
+								},
+								configurable: true,
+								enumerable: true
+							});
+						}
+
+						if (tagName.toLowerCase() === 'link') {
+							const rawSetAttribute = el.setAttribute;
+							const rawGetAttribute = el.getAttribute;
+							let hrefValue = '';
+							
+							el.setAttribute = function (name, value) {
+								if (name === 'href' && typeof value === 'string') {
+									value = z_proxyCdnUrl(value);
+									hrefValue = value;
+								}
+								return rawSetAttribute.call(this, name, value);
+							};
+
+							Object.defineProperty(el, 'href', {
+								get: function() {
+									return hrefValue || rawGetAttribute.call(this, 'href') || '';
+								},
+								set: function(value) {
+									if (typeof value === 'string') {
+										hrefValue = z_proxyCdnUrl(value);
+										rawSetAttribute.call(this, 'href', hrefValue);
+									} else {
+										hrefValue = value;
+									}
+								},
+								configurable: true,
+								enumerable: true
+							});
+						}
+
+						return el;
+					};
+
+					const Z_OriginalXMLHttpRequest = window.XMLHttpRequest;
+					window.XMLHttpRequest = function (...args) {
+						const xhr = new Z_OriginalXMLHttpRequest(...args);
+						const rawOpen = xhr.open;
+
+						xhr.open = function (method, url, ...rest) {
+							if (typeof url === 'string') {
+								const methodUpper = (method || '').toUpperCase();
+								if (methodUpper === 'GET' && z_isUrlInWhitelist(url)) {
+									url = z_proxyCdnUrl(url);
+								}
+							}
+							return rawOpen.call(this, method, url, ...rest);
+						};
+
+						return xhr;
+					};
+
+					window.XMLHttpRequest.prototype = Z_OriginalXMLHttpRequest.prototype;
+					Object.setPrototypeOf(window.XMLHttpRequest, Z_OriginalXMLHttpRequest);
+
+					const z_originalFetch = window.fetch;
+					window.fetch = async function (...args) {
+						if (args.length > 0) {
+							let url = '';
+							let method = 'GET';
+							
+							if (typeof args[0] === 'string') {
+								url = args[0];
+								if (args[1] && args[1].method) {
+									method = args[1].method.toUpperCase();
+								}
+								if (method === 'GET' && z_isUrlInWhitelist(url)) {
+									args[0] = z_proxyCdnUrl(url);
+								}
+							} else if (args[0] instanceof Request) {
+								const originalUrl = args[0].url;
+								method = (args[0].method || 'GET').toUpperCase();
+								if (method === 'GET' && z_isUrlInWhitelist(originalUrl)) {
+									const proxiedUrl = z_proxyCdnUrl(originalUrl);
+									if (proxiedUrl !== originalUrl) {
+										args[0] = new Request(proxiedUrl, args[0]);
+									}
+								}
+							}
+						}
+						return z_originalFetch.apply(this, args);
+					};
+				</script>
+			</head>
+			<body>
+				
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harana &amp; Co. - Serenade Your Body</title>
+    <style>
+        :root {
+            --barako-brown: #2C241B;
+            --maharlika-gold: #C5A059;
+            --calamansi-cream: #F9F7F2;
+            --baybayin-indigo: #2B3A55;
+            --white: #FFFFFF;
+        }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; margin: 0; padding: 0; background-color: var(--calamansi-cream); color: var(--barako-brown); line-height: 1.6; }
+        h1, h2, h3, h4 { font-family: 'Georgia', serif; font-weight: normal; }
+        
+        /* Navigation */
+        header { background-color: var(--white); padding: 20px 50px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #E6E2D8; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .logo { font-family: 'Georgia', serif; font-size: 24px; font-weight: bold; color: var(--barako-brown); letter-spacing: 1px; cursor: pointer; }
+        nav ul { list-style: none; display: flex; gap: 30px; margin: 0; padding: 0; }
+        nav a { text-decoration: none; color: var(--barako-brown); font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; cursor: pointer; }
+        nav a:hover, nav a.active { color: var(--maharlika-gold); }
+        .cart-icon { font-size: 20px; cursor: pointer; position: relative; }
+        .cart-count { position: absolute; top: -8px; right: -8px; background: var(--maharlika-gold); color: var(--barako-brown); font-size: 10px; font-weight: bold; width: 16px; height: 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+        /* Page Views System */
+        .page-view { display: none; animation: fadeIn 0.5s ease; }
+        .page-view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Home Page Styles */
+        .home-hero { text-align: center; padding: 100px 20px; background-color: var(--calamansi-cream); }
+        .home-hero h1 { font-size: 48px; margin: 0 0 15px; color: var(--barako-brown); }
+        .home-hero p { font-size: 18px; color: #666; max-width: 600px; margin: 0 auto 30px; }
+        .btn-main { background-color: var(--maharlika-gold); color: var(--barako-brown); padding: 15px 40px; text-decoration: none; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; border: none; cursor: pointer; transition: 0.3s; font-weight: bold; display: inline-block; }
+        .btn-main:hover { background-color: var(--barako-brown); color: var(--white); }
+        .btn-secondary { background-color: transparent; color: var(--barako-brown); border: 1px solid var(--barako-brown); padding: 15px 40px; text-decoration: none; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.3s; font-weight: bold; display: inline-block; margin-left: 10px; }
+        .btn-secondary:hover { background-color: var(--barako-brown); color: var(--white); }
+        .promise-section { padding: 80px 50px; text-align: center; background: var(--white); }
+        .promise-grid { display: flex; justify-content: center; gap: 40px; flex-wrap: wrap; max-width: 1000px; margin: 0 auto; }
+        .promise-item { max-width: 300px; }
+        .promise-item h3 { color: var(--baybayin-indigo); font-size: 20px; }
+
+        /* Blueprint Quiz Styles */
+        .blueprint-container { max-width: 800px; margin: 40px auto; background: var(--white); padding: 40px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .step { display: none; }
+        .step.active { display: block; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+        input[type="number"], select { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; box-sizing: border-box; background: var(--calamansi-cream); }
+        .btn { background-color: var(--maharlika-gold); color: var(--barako-brown); padding: 15px 30px; border: none; cursor: pointer; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; margin-top: 10px; transition: 0.3s; font-weight: bold; }
+        .btn:hover { background-color: var(--barako-brown); color: var(--white); }
+        .btn-gray { background-color: #ccc; color: #333; }
+        .progress-bar { height: 4px; background: #eee; margin-bottom: 30px; border-radius: 2px; }
+        .progress-fill { height: 100%; background: var(--maharlika-gold); width: 0%; transition: width 0.3s ease; border-radius: 2px; }
+        .results-box { background: var(--calamansi-cream); padding: 25px; border-left: 4px solid var(--maharlika-gold); margin-bottom: 20px; }
+        .blueprint-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .disclaimer { font-size: 13px; color: #666; font-style: italic; background: #fdfdfd; padding: 15px; border: 1px dashed #ddd; margin-top: 15px; }
+        .highlight { color: var(--baybayin-indigo); font-weight: bold; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; margin-top: 15px; }
+        .calendar-day { padding: 15px; text-align: center; border: 1px solid #ddd; cursor: pointer; border-radius: 4px; background: #fff; font-size: 14px; }
+        .calendar-day:hover { border-color: var(--maharlika-gold); }
+        .calendar-day.selected { background: var(--baybayin-indigo); color: var(--white); border-color: var(--baybayin-indigo); }
+
+        /* Menu Page Styles */
+        .page-hero { text-align: center; padding: 60px 20px 40px; background-color: var(--calamansi-cream); }
+        .page-hero h1 { font-size: 42px; margin: 0 0 10px; color: var(--barako-brown); }
+        .page-hero p { font-size: 16px; color: #666; max-width: 600px; margin: 0 auto; }
+        .filters { display: flex; justify-content: center; gap: 15px; padding: 30px 20px; flex-wrap: wrap; }
+        .filter-btn { background: transparent; border: 1px solid var(--barako-brown); color: var(--barako-brown); padding: 10px 25px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: 0.3s; font-family: 'Georgia', serif; }
+        .filter-btn:hover, .filter-btn.active { background: var(--barako-brown); color: var(--white); }
+        .menu-container { max-width: 1200px; margin: 0 auto; padding: 20px 50px 80px; }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 30px; }
+        .meal-card { background: var(--white); border: 1px solid #E6E2D8; overflow: hidden; display: flex; flex-direction: column; transition: transform 0.3s ease, box-shadow 0.3s ease; }
+        .meal-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+        .meal-img { width: 100%; height: 200px; background: linear-gradient(135deg, #e6dacd 0%, #d4c4b1 100%); display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; box-sizing: border-box; border-bottom: 1px solid #E6E2D8; }
+        .meal-img span { font-family: 'Georgia', serif; font-style: italic; color: #8a7a65; font-size: 16px; }
+        .meal-content { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+        .meal-plan-tag { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--maharlika-gold); font-weight: bold; margin-bottom: 5px; }
+        .meal-title { font-size: 18px; margin: 0 0 10px; color: var(--baybayin-indigo); }
+        .meal-desc { font-size: 13px; color: #666; margin-bottom: 15px; flex-grow: 1; }
+        .meal-macros { display: flex; gap: 10px; font-size: 11px; font-weight: bold; color: var(--barako-brown); border-top: 1px solid #eee; border-bottom: 1px solid #eee; padding: 10px 0; margin-bottom: 15px; justify-content: space-between; }
+        .macro-item { text-align: center; }
+        .macro-item span { display: block; font-size: 9px; font-weight: normal; color: #888; text-transform: uppercase; }
+        .meal-actions { display: flex; gap: 10px; }
+        .btn-card { padding: 10px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; border: none; flex: 1; transition: 0.3s; }
+        .btn-recipe { background: transparent; border: 1px solid var(--barako-brown); color: var(--barako-brown); }
+        .btn-recipe:hover { background: var(--barako-brown); color: var(--white); }
+        .btn-add { background: var(--maharlika-gold); color: var(--barako-brown); font-weight: bold; }
+        .btn-add:hover { background: var(--barako-brown); color: var(--white); }
+        .btn-add.added { background: #4CAF50; color: white; }
+
+        /* Modal */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(44, 36, 27, 0.8); display: none; justify-content: center; align-items: center; z-index: 200; padding: 20px; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: var(--white); max-width: 600px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; animation: slideUp 0.4s ease; }
+        @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .modal-img { width: 100%; height: 250px; background: linear-gradient(135deg, #e6dacd 0%, #d4c4b1 100%); display: flex; align-items: center; justify-content: center; text-align: center; padding: 20px; box-sizing: border-box; }
+        .modal-img span { font-family: 'Georgia', serif; font-style: italic; color: #8a7a65; font-size: 24px; }
+        .modal-inner { padding: 40px; }
+        .close-modal { position: absolute; top: 15px; right: 20px; font-size: 30px; cursor: pointer; color: var(--barako-brown); line-height: 1; z-index: 10; background: rgba(255,255,255,0.8); border-radius: 50%; width: 35px; height: 35px; display: flex; align-items: center; justify-content: center; }
+        .modal-content h2 { color: var(--baybayin-indigo); margin-top: 0; }
+        .modal-tags { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        .modal-tag { font-size: 10px; background: var(--calamansi-cream); padding: 4px 10px; border: 1px solid #ddd; }
+        .recipe-section { margin-bottom: 20px; }
+        .recipe-section h4 { color: var(--barako-brown); border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 10px; }
+        .recipe-section ul, .recipe-section ol { padding-left: 20px; font-size: 14px; color: #555; }
+        .recipe-section li { margin-bottom: 8px; }
+    </style>
+
+
+
+    <header>
+        <div class="logo" onclick="showPage(&#39;home&#39;)">Harana &amp; Co.</div>
+        <nav>
+            <ul>
+                <li><a onclick="showPage(&#39;home&#39;)" id="nav-home">Home</a></li>
+                <li><a onclick="showPage(&#39;blueprint&#39;)" id="nav-blueprint">Start Blueprint</a></li>
+                <li><a onclick="showPage(&#39;menu&#39;)" id="nav-menu">The Menu</a></li>
+            </ul>
+        </nav>
+        <div class="cart-icon">🛒 <span class="cart-count" id="cartCount">0</span></div>
+    </header>
+
+    <!-- HOME PAGE VIEW -->
+    <div class="page-view active" id="home">
+        <div class="home-hero">
+            <h1>Serenade Your Body. Nourish Your Soul.</h1>
+            <p>Premium, heritage-inspired meal prep delivered fresh to your door. Traditional Filipino flavors, expertly balanced for your modern health goals.</p>
+            <br>
+            <button class="btn-main" onclick="showPage(&#39;blueprint&#39;)">Start Your Custom Blueprint</button>
+            <button class="btn-secondary" onclick="showPage(&#39;menu&#39;)">Browse The Menu</button>
+        </div>
+        
+        <div class="promise-section">
+            <h2 style="font-size: 36px; margin-bottom: 40px;">The Harana Promise</h2>
+            <div class="promise-grid">
+                <div class="promise-item">
+                    <h3>Science-Backed Nutrition</h3>
+                    <p>We calculate your exact BMR, TDEE, and macros to create a personalized blueprint for your goals.</p>
+                </div>
+                <div class="promise-item">
+                    <h3>Flavor with Heritage</h3>
+                    <p>We elevate traditional Filipino flavors for your modern health goals. No bland, sterile diet food here.</p>
+                </div>
+                <div class="promise-item">
+                    <h3>Total Flexibility</h3>
+                    <p>Pause, skip, or swap your meals with 48 hours' notice. You are always in control of your schedule.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BLUEPRINT PAGE VIEW (The Quiz & Calculator) -->
+    <div class="page-view" id="blueprint">
+        <div class="blueprint-container">
+            <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="margin: 0; color: var(--barako-brown); letter-spacing: 1px;">Nutrition Concierge</h1>
+                <p style="font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: #888;">Your Custom Blueprint</p>
+            </div>
+
+            <div class="progress-bar"><div class="progress-fill" id="progress"></div></div>
+
+            <!-- STEP 1: Basics -->
+            <div class="step active" id="step1">
+                <h2>Step 1: Let's get to know you</h2>
+                <p>To calculate your exact metabolic needs, we need a few details.</p>
+                
+                <div class="form-group">
+                    <label>Sex</label>
+                    <select id="sex">
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Age</label>
+                    <input type="number" id="age" placeholder="e.g. 28">
+                </div>
+                <div class="form-group">
+                    <label>Weight (kg)</label>
+                    <input type="number" id="weight" placeholder="e.g. 75">
+                </div>
+                <div class="form-group">
+                    <label>Height (cm)</label>
+                    <input type="number" id="height" placeholder="e.g. 170">
+                </div>
+                <div class="form-group">
+                    <label>Daily Work Activity Level</label>
+                    <select id="activity">
+                        <option value="1.2">Mostly Sitting (Desk Job)</option>
+                        <option value="1.55">Active (On my feet, physical work)</option>
+                    </select>
+                </div>
+                <button class="btn" onclick="nextStep(2)">Continue</button>
+            </div>
+
+            <!-- STEP 2: Goals & Preferences -->
+            <div class="step" id="step2">
+                <h2>Step 2: Your Goals &amp; Taste</h2>
+                
+                <div class="form-group">
+                    <label>What is your primary goal?</label>
+                    <select id="goal">
+                        <option value="lose">Lose Weight (Calorie Deficit)</option>
+                        <option value="maintain">Maintain Weight &amp; Fuel</option>
+                        <option value="bulk">Gain Muscle / Bulk (Calorie Surplus)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Spice Preference</label>
+                    <select id="spice">
+                        <option value="any">No Preference</option>
+                        <option value="non-spicy">Non-Spicy Only</option>
+                        <option value="spicy">I love spicy food!</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Allergies / Restrictions</label>
+                    <select id="allergy">
+                        <option value="none">None</option>
+                        <option value="seafood">No Seafood / Fish</option>
+                        <option value="pork">No Pork</option>
+                        <option value="beef">No Beef</option>
+                    </select>
+                </div>
+                <button class="btn btn-gray" onclick="nextStep(1)">Back</button>
+                <button class="btn" onclick="calculateResults()">Reveal My Blueprint</button>
+            </div>
+
+            <!-- STEP 3: Results & Menu Selection -->
+            <div class="step" id="step3">
+                <h2>Step 3: Your Custom Harana Blueprint</h2>
+                <div class="results-box" id="results-output"></div>
+
+                <h3>Recommended Menu For You</h3>
+                <p>Select the meals you'd like in your rotation:</p>
+                <div id="blueprintMenuGrid" class="menu-grid" style="margin-top: 20px; margin-bottom: 40px;"></div>
+
+                <h3>Choose Your Subscription Length</h3>
+                <select id="duration" onchange="renderCalendar()">
+                    <option value="3">3 Days</option>
+                    <option value="5">5 Days</option>
+                    <option value="7">1 Week (7 Days)</option>
+                    <option value="14">2 Weeks (14 Days)</option>
+                    <option value="30">1 Month (30 Days)</option>
+                </select>
+
+                <h3 style="margin-top: 30px;">Select Your Delivery Days</h3>
+                <p style="font-size: 12px; color: #888;">Tap the days you want your meals delivered.</p>
+                <div class="calendar-grid" id="calendar"></div>
+
+                <button class="btn btn-gray" style="margin-top: 30px;" onclick="nextStep(2)">Back</button>
+                <button class="btn" onclick="finalizeOrder()" style="margin-top: 30px;">Proceed to Checkout</button>
+            </div>
+
+            <!-- STEP 4: Final Output -->
+            <div class="step" id="step4">
+                <h2>Your Cart is Ready!</h2>
+                <div class="results-box" id="cart-summary"></div>
+                <p style="text-align: center; margin-top: 20px;">In a live environment, this takes you to the GCash / Maya / Credit Card checkout.</p>
+                <button class="btn" onclick="showPage(&#39;home&#39;)" style="margin-top: 20px; width: 100%;">Back to Home</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MENU PAGE VIEW -->
+    <div class="page-view" id="menu">
+        <div class="page-hero">
+            <h1>The Heritage Menu</h1>
+            <p>Traditional Filipino flavors, expertly balanced for your modern health goals. Choose your plan and explore our chef-crafted meals.</p>
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterMenu(&#39;all&#39;, event, &#39;menuGrid&#39;)">All Meals</button>
+            <button class="filter-btn" onclick="filterMenu(&#39;Makata&#39;, event, &#39;menuGrid&#39;)">Makata (Bulk)</button>
+            <button class="filter-btn" onclick="filterMenu(&#39;Lakan&#39;, event, &#39;menuGrid&#39;)">Lakan (Performance)</button>
+            <button class="filter-btn" onclick="filterMenu(&#39;Mutya&#39;, event, &#39;menuGrid&#39;)">Mutya (Lean)</button>
+            <button class="filter-btn" onclick="filterMenu(&#39;Diwata&#39;, event, &#39;menuGrid&#39;)">Diwata (Glow)</button>
+            <button class="filter-btn" onclick="filterMenu(&#39;Halaman&#39;, event, &#39;menuGrid&#39;)">Halaman (Vegan)</button>
+        </div>
+
+        <div class="menu-container">
+            <div class="menu-grid" id="menuGrid"><div class="meal-card">
+                    <div class="meal-img"><span>Slow-Braised Beef Kaldereta</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Slow-Braised Beef Kaldereta</h3>
+                        <p class="meal-desc">A timeless Filipino fiesta favorite. Slow-braised premium beef in a rich tomato sauce with olives and peppers, served over organic red rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">850 <span>Calories</span></div>
+                            <div class="macro-item">55g <span>Protein</span></div>
+                            <div class="macro-item">65g <span>Carbs</span></div>
+                            <div class="macro-item">38g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(1)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-1-menuGrid" onclick="addToCart(&#39;1-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Sweet &amp; Savory Pork Humba</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Sweet &amp; Savory Pork Humba</h3>
+                        <p class="meal-desc">Comforting Visayan classic. Pork belly braised in soy, vinegar, and black beans, paired with high-protein quinoa and a boiled egg.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">920 <span>Calories</span></div>
+                            <div class="macro-item">60g <span>Protein</span></div>
+                            <div class="macro-item">70g <span>Carbs</span></div>
+                            <div class="macro-item">42g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(2)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-2-menuGrid" onclick="addToCart(&#39;2-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Chicken Tinola with Malunggay &amp; Brown Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Chicken Tinola with Malunggay &amp; Brown Rice</h3>
+                        <p class="meal-desc">Hearty chicken soup with green papaya and fresh malunggay leaves, served with generous portions of fibrous brown rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">750 <span>Calories</span></div>
+                            <div class="macro-item">50g <span>Protein</span></div>
+                            <div class="macro-item">60g <span>Carbs</span></div>
+                            <div class="macro-item">30g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(3)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-3-menuGrid" onclick="addToCart(&#39;3-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Bistek Tagalog with Mashed Kamote</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Bistek Tagalog with Mashed Kamote</h3>
+                        <p class="meal-desc">Beef sirloin marinated in soy and calamansi, fried with onions, served over creamy mashed sweet potato (kamote).</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">820 <span>Calories</span></div>
+                            <div class="macro-item">55g <span>Protein</span></div>
+                            <div class="macro-item">60g <span>Carbs</span></div>
+                            <div class="macro-item">35g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(4)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-4-menuGrid" onclick="addToCart(&#39;4-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Lechon Kawali (Air-Fried) with Java Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Lechon Kawali (Air-Fried) with Java Rice</h3>
+                        <p class="meal-desc">Crispy pork belly cooked in an air-fryer to reduce excess oil while keeping the crackling skin, served with annatto-infused Java rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">900 <span>Calories</span></div>
+                            <div class="macro-item">60g <span>Protein</span></div>
+                            <div class="macro-item">65g <span>Carbs</span></div>
+                            <div class="macro-item">45g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(5)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-5-menuGrid" onclick="addToCart(&#39;5-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Tapa de Manila with Garlic Rice &amp; Fried Egg</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Tapa de Manila with Garlic Rice &amp; Fried Egg</h3>
+                        <p class="meal-desc">Sweet and savory beef tapa, paired with garlic brown rice and a sunny-side-up egg for the ultimate muscle-building meal.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">880 <span>Calories</span></div>
+                            <div class="macro-item">55g <span>Protein</span></div>
+                            <div class="macro-item">70g <span>Carbs</span></div>
+                            <div class="macro-item">40g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(6)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-6-menuGrid" onclick="addToCart(&#39;6-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Mechado (Beef Stew) with Quinoa</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Mechado (Beef Stew) with Quinoa</h3>
+                        <p class="meal-desc">Tomato-based beef stew with a fork-tender texture, served over quinoa to add complete plant proteins.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">810 <span>Calories</span></div>
+                            <div class="macro-item">50g <span>Protein</span></div>
+                            <div class="macro-item">60g <span>Carbs</span></div>
+                            <div class="macro-item">38g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(7)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-7-menuGrid" onclick="addToCart(&#39;7-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Crispy Pata Flakes with Pesto Brown Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Crispy Pata Flakes with Pesto Brown Rice</h3>
+                        <p class="meal-desc">Shredded crispy pata mixed with a light soy-calamansi glaze, served with brown rice tossed in a mild basil pesto.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">950 <span>Calories</span></div>
+                            <div class="macro-item">65g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">50g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(8)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-8-menuGrid" onclick="addToCart(&#39;8-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Pork Ginataan with Langka &amp; Red Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Pork Ginataan with Langka &amp; Red Rice</h3>
+                        <p class="meal-desc">Pork simmered in rich coconut milk with tender jackfruit (langka), served with red rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">830 <span>Calories</span></div>
+                            <div class="macro-item">50g <span>Protein</span></div>
+                            <div class="macro-item">65g <span>Carbs</span></div>
+                            <div class="macro-item">40g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(9)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-9-menuGrid" onclick="addToCart(&#39;9-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Sisig (Pork/Chicken Mix) with Garlic Quinoa</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Sisig (Pork/Chicken Mix) with Garlic Quinoa</h3>
+                        <p class="meal-desc">A 50/50 blend of pork and chicken to keep the flavor but boost protein, served over quinoa instead of rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">880 <span>Calories</span></div>
+                            <div class="macro-item">60g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">45g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(10)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-10-menuGrid" onclick="addToCart(&#39;10-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Beef Pares with Brown Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Beef Pares with Brown Rice</h3>
+                        <p class="meal-desc">Sweet and savory beef broth stew, paired with brown rice for complex carbohydrates.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">780 <span>Calories</span></div>
+                            <div class="macro-item">50g <span>Protein</span></div>
+                            <div class="macro-item">65g <span>Carbs</span></div>
+                            <div class="macro-item">28g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(11)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-11-menuGrid" onclick="addToCart(&#39;11-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Lechon Paksiw with Quinoa</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Makata Plan</div>
+                        <h3 class="meal-title">Lechon Paksiw with Quinoa</h3>
+                        <p class="meal-desc">Leftover lechon style pork simmered in a sweet-sour liver sauce, served over protein-rich quinoa.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">840 <span>Calories</span></div>
+                            <div class="macro-item">55g <span>Protein</span></div>
+                            <div class="macro-item">60g <span>Carbs</span></div>
+                            <div class="macro-item">38g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(12)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-12-menuGrid" onclick="addToCart(&#39;12-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Charred Chicken Inasal with Java Rice &amp; Atchara</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Charred Chicken Inasal with Java Rice &amp; Atchara</h3>
+                        <p class="meal-desc">The pride of Bacolod. Chicken marinated 24hrs in lemongrass and calamansi, grilled to perfection. Served with Java rice and fresh atchara.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">650 <span>Calories</span></div>
+                            <div class="macro-item">48g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">22g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(13)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-13-menuGrid" onclick="addToCart(&#39;13-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Seared Tuna Belly with Garlic Brown Rice &amp; Kangkong</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Seared Tuna Belly with Garlic Brown Rice &amp; Kangkong</h3>
+                        <p class="meal-desc">Omega-3 rich tuna belly lightly seared, served with garlic brown rice and sautéed water spinach.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">580 <span>Calories</span></div>
+                            <div class="macro-item">45g <span>Protein</span></div>
+                            <div class="macro-item">50g <span>Carbs</span></div>
+                            <div class="macro-item">18g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(14)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-14-menuGrid" onclick="addToCart(&#39;14-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Pork Sinigang (Pork Belly) with Brown Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Pork Sinigang (Pork Belly) with Brown Rice</h3>
+                        <p class="meal-desc">Classic tamarind soup with tender pork, string beans, and radish, paired with fibrous brown rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">620 <span>Calories</span></div>
+                            <div class="macro-item">40g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">25g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(15)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-15-menuGrid" onclick="addToCart(&#39;15-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Chicken Adobo (Flaked) with Quinoa</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Chicken Adobo (Flaked) with Quinoa</h3>
+                        <p class="meal-desc">Chicken adobo cooked until the sauce evaporates, then flaked and sautéed in its own oil, served over quinoa.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">560 <span>Calories</span></div>
+                            <div class="macro-item">45g <span>Protein</span></div>
+                            <div class="macro-item">50g <span>Carbs</span></div>
+                            <div class="macro-item">18g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(16)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-16-menuGrid" onclick="addToCart(&#39;16-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Beef Pares with Mashed Kamote</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Beef Pares with Mashed Kamote</h3>
+                        <p class="meal-desc">Sweet and savory beef broth stew, served with mashed sweet potato instead of the traditional rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">600 <span>Calories</span></div>
+                            <div class="macro-item">45g <span>Protein</span></div>
+                            <div class="macro-item">50g <span>Carbs</span></div>
+                            <div class="macro-item">22g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(17)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-17-menuGrid" onclick="addToCart(&#39;17-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Ginataang Tilapia with Red Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Ginataang Tilapia with Red Rice</h3>
+                        <p class="meal-desc">Fresh tilapia simmered in coconut milk and spinach, served with red rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">550 <span>Calories</span></div>
+                            <div class="macro-item">40g <span>Protein</span></div>
+                            <div class="macro-item">50g <span>Carbs</span></div>
+                            <div class="macro-item">18g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(18)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-18-menuGrid" onclick="addToCart(&#39;18-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Pork BBQ Skewers with Java Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Pork BBQ Skewers with Java Rice</h3>
+                        <p class="meal-desc">Sweet-style Filipino pork BBQ, grilled to perfection, served with a light Java rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">630 <span>Calories</span></div>
+                            <div class="macro-item">45g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">22g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(19)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-19-menuGrid" onclick="addToCart(&#39;19-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Chicken Bistek with Brown Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Chicken Bistek with Brown Rice</h3>
+                        <p class="meal-desc">Chicken breast sliced thin, marinated in soy and calamansi, topped with onion rings.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">590 <span>Calories</span></div>
+                            <div class="macro-item">45g <span>Protein</span></div>
+                            <div class="macro-item">50g <span>Carbs</span></div>
+                            <div class="macro-item">20g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(20)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-20-menuGrid" onclick="addToCart(&#39;20-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Bangus (Milkfish) Fried in Coconut Oil with Garlic Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Bangus (Milkfish) Fried in Coconut Oil with Garlic Rice</h3>
+                        <p class="meal-desc">Boneless bangus pan-fried in healthy coconut oil, served with brown garlic rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">610 <span>Calories</span></div>
+                            <div class="macro-item">42g <span>Protein</span></div>
+                            <div class="macro-item">50g <span>Carbs</span></div>
+                            <div class="macro-item">25g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(21)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-21-menuGrid" onclick="addToCart(&#39;21-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Dinuguan (Pork Blood Stew) with Puto</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Dinuguan (Pork Blood Stew) with Puto</h3>
+                        <p class="meal-desc">Rich, savory blood stew made with lean pork cuts, served with steamed rice cakes (puto).</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">580 <span>Calories</span></div>
+                            <div class="macro-item">40g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">20g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(22)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-22-menuGrid" onclick="addToCart(&#39;22-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Chicken Caldereta with Brown Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Chicken Caldereta with Brown Rice</h3>
+                        <p class="meal-desc">Tomato-based chicken stew with potatoes and bell peppers, paired with brown rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">640 <span>Calories</span></div>
+                            <div class="macro-item">45g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">22g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(23)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-23-menuGrid" onclick="addToCart(&#39;23-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Embutido (Steamed Meatloaf) with Sweet Potato</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Lakan Plan</div>
+                        <h3 class="meal-title">Embutido (Steamed Meatloaf) with Sweet Potato</h3>
+                        <p class="meal-desc">Filipino-style meatloaf stuffed with eggs and sausages, served with steamed sweet potato.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">610 <span>Calories</span></div>
+                            <div class="macro-item">45g <span>Protein</span></div>
+                            <div class="macro-item">50g <span>Carbs</span></div>
+                            <div class="macro-item">22g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(24)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-24-menuGrid" onclick="addToCart(&#39;24-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Sinigang na Salmon with Cauliflower Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Sinigang na Salmon with Cauliflower Rice</h3>
+                        <p class="meal-desc">Comforting tamarind soup with fresh salmon, radish, and greens. Served over cauliflower rice to keep carbs minimal.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">420 <span>Calories</span></div>
+                            <div class="macro-item">38g <span>Protein</span></div>
+                            <div class="macro-item">12g <span>Carbs</span></div>
+                            <div class="macro-item">24g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(25)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-25-menuGrid" onclick="addToCart(&#39;25-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Garlic Butter Shrimp over Zucchini Noodles</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Garlic Butter Shrimp over Zucchini Noodles</h3>
+                        <p class="meal-desc">Plump local shrimp sautéed in garlic, butter, and calamansi. Served over fresh zucchini noodles instead of pasta.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">380 <span>Calories</span></div>
+                            <div class="macro-item">32g <span>Protein</span></div>
+                            <div class="macro-item">9g <span>Carbs</span></div>
+                            <div class="macro-item">24g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(26)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-26-menuGrid" onclick="addToCart(&#39;26-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Bistek na Tuna with Cauliflower Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Bistek na Tuna with Cauliflower Rice</h3>
+                        <p class="meal-desc">Tuna steaks marinated in soy and calamansi, topped with onions, served with cauliflower rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">400 <span>Calories</span></div>
+                            <div class="macro-item">38g <span>Protein</span></div>
+                            <div class="macro-item">12g <span>Carbs</span></div>
+                            <div class="macro-item">18g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(27)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-27-menuGrid" onclick="addToCart(&#39;27-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Inasal Chicken Breast (Skinless) with Side Salad</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Inasal Chicken Breast (Skinless) with Side Salad</h3>
+                        <p class="meal-desc">Lechon-skin removed, marinated in Inasal spices, grilled, and served with a crisp cucumber and tomato salad.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">390 <span>Calories</span></div>
+                            <div class="macro-item">42g <span>Protein</span></div>
+                            <div class="macro-item">15g <span>Carbs</span></div>
+                            <div class="macro-item">16g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(28)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-28-menuGrid" onclick="addToCart(&#39;28-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Adobo Flakes (Chicken Breast) with Cauliflower Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Adobo Flakes (Chicken Breast) with Cauliflower Rice</h3>
+                        <p class="meal-desc">Shredded chicken breast adobo, toasted in coconut oil until crispy, served over cauliflower rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">420 <span>Calories</span></div>
+                            <div class="macro-item">40g <span>Protein</span></div>
+                            <div class="macro-item">10g <span>Carbs</span></div>
+                            <div class="macro-item">24g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(29)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-29-menuGrid" onclick="addToCart(&#39;29-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Steamed Tahong (Mussels) in Ginger Broth</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Steamed Tahong (Mussels) in Ginger Broth</h3>
+                        <p class="meal-desc">High-protein, low-calorie mussels steamed in ginger and garlic. A light, filling meal.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">300 <span>Calories</span></div>
+                            <div class="macro-item">28g <span>Protein</span></div>
+                            <div class="macro-item">8g <span>Carbs</span></div>
+                            <div class="macro-item">12g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(30)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-30-menuGrid" onclick="addToCart(&#39;30-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Ginataang Kalabasa &amp; Shrimp (No Rice)</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Ginataang Kalabasa &amp; Shrimp (No Rice)</h3>
+                        <p class="meal-desc">Squash and shrimp simmered in a light coconut milk broth, heavy on the squash for fiber.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">380 <span>Calories</span></div>
+                            <div class="macro-item">25g <span>Protein</span></div>
+                            <div class="macro-item">15g <span>Carbs</span></div>
+                            <div class="macro-item">20g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(31)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-31-menuGrid" onclick="addToCart(&#39;31-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Bangus Sisig (Milkfish) with Lettuce Wraps</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Bangus Sisig (Milkfish) with Lettuce Wraps</h3>
+                        <p class="meal-desc">Flaked milkfish sisig served with crisp iceberg lettuce leaves instead of rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">400 <span>Calories</span></div>
+                            <div class="macro-item">35g <span>Protein</span></div>
+                            <div class="macro-item">10g <span>Carbs</span></div>
+                            <div class="macro-item">22g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(32)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-32-menuGrid" onclick="addToCart(&#39;32-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Chicken Pochero (Clear Broth, Lean Cuts)</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Chicken Pochero (Clear Broth, Lean Cuts)</h3>
+                        <p class="meal-desc">Tomato-based chicken stew with banana and cabbage, using chicken breast to keep fats low.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">390 <span>Calories</span></div>
+                            <div class="macro-item">35g <span>Protein</span></div>
+                            <div class="macro-item">15g <span>Carbs</span></div>
+                            <div class="macro-item">18g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(33)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-33-menuGrid" onclick="addToCart(&#39;33-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Pinapaitan (Bitter Stew) - Lean Cuts</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Pinapaitan (Bitter Stew) - Lean Cuts</h3>
+                        <p class="meal-desc">Ilocano bitter stew made with lean beef cuts and bile, highly flavorful and very low calorie.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">350 <span>Calories</span></div>
+                            <div class="macro-item">35g <span>Protein</span></div>
+                            <div class="macro-item">5g <span>Carbs</span></div>
+                            <div class="macro-item">15g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(34)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-34-menuGrid" onclick="addToCart(&#39;34-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Grilled Bangus with Tomato-Onion Salad</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Grilled Bangus with Tomato-Onion Salad</h3>
+                        <p class="meal-desc">Boneless milkfish grilled simply, served with a refreshing tomato, onion, and calamansi salad.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">410 <span>Calories</span></div>
+                            <div class="macro-item">38g <span>Protein</span></div>
+                            <div class="macro-item">8g <span>Carbs</span></div>
+                            <div class="macro-item">24g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(35)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-35-menuGrid" onclick="addToCart(&#39;35-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Sinigang na Hipon (Shrimp) with Cauliflower Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Mutya Plan</div>
+                        <h3 class="meal-title">Sinigang na Hipon (Shrimp) with Cauliflower Rice</h3>
+                        <p class="meal-desc">Sour tamarind broth loaded with shrimp and water spinach, served with cauliflower rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">390 <span>Calories</span></div>
+                            <div class="macro-item">32g <span>Protein</span></div>
+                            <div class="macro-item">10g <span>Carbs</span></div>
+                            <div class="macro-item">20g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(36)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-36-menuGrid" onclick="addToCart(&#39;36-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Ginataang Kalabasa &amp; Malunggay with Grilled Mahi-Mahi</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Ginataang Kalabasa &amp; Malunggay with Grilled Mahi-Mahi</h3>
+                        <p class="meal-desc">Creamy Bicolano stew. Sweet squash and moringa leaves in coconut milk, paired with a grilled Mahi-Mahi fillet.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">480 <span>Calories</span></div>
+                            <div class="macro-item">35g <span>Protein</span></div>
+                            <div class="macro-item">22g <span>Carbs</span></div>
+                            <div class="macro-item">28g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(37)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-37-menuGrid" onclick="addToCart(&#39;37-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Fresh Lumpiang Sariwa with Chicken &amp; Peanut Sauce</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Fresh Lumpiang Sariwa with Chicken &amp; Peanut Sauce</h3>
+                        <p class="meal-desc">Vibrant crepe filled with sautéed jicama, carrots, cabbage, and chicken breast, draped in naturally sweetened peanut sauce.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">450 <span>Calories</span></div>
+                            <div class="macro-item">30g <span>Protein</span></div>
+                            <div class="macro-item">35g <span>Carbs</span></div>
+                            <div class="macro-item">20g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(38)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-38-menuGrid" onclick="addToCart(&#39;38-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Ensaladang Talong (Grilled Eggplant) with Grilled Salmon</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Ensaladang Talong (Grilled Eggplant) with Grilled Salmon</h3>
+                        <p class="meal-desc">Smoky grilled eggplant salad with onions and tomatoes in vinaigrette, paired with Omega-3 rich salmon.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">460 <span>Calories</span></div>
+                            <div class="macro-item">32g <span>Protein</span></div>
+                            <div class="macro-item">15g <span>Carbs</span></div>
+                            <div class="macro-item">30g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(39)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-39-menuGrid" onclick="addToCart(&#39;39-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Sinigang na Hipon (Shrimp) with Kangkong &amp; Radish</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Sinigang na Hipon (Shrimp) with Kangkong &amp; Radish</h3>
+                        <p class="meal-desc">Sour tamarind broth loaded with shrimp and water spinach, rich in collagen-boosting nutrients.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">400 <span>Calories</span></div>
+                            <div class="macro-item">30g <span>Protein</span></div>
+                            <div class="macro-item">15g <span>Carbs</span></div>
+                            <div class="macro-item">22g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(40)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-40-menuGrid" onclick="addToCart(&#39;40-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Kinilaw na Tuna (Filipino Ceviche) with Avocado</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Kinilaw na Tuna (Filipino Ceviche) with Avocado</h3>
+                        <p class="meal-desc">Raw tuna cured in vinegar and calamansi, mixed with onions, ginger, and creamy avocado for healthy fats.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">420 <span>Calories</span></div>
+                            <div class="macro-item">30g <span>Protein</span></div>
+                            <div class="macro-item">10g <span>Carbs</span></div>
+                            <div class="macro-item">28g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(41)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-41-menuGrid" onclick="addToCart(&#39;41-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Pinakbet (Mixed Veggies) with Lean Pork &amp; Coconut Oil</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Pinakbet (Mixed Veggies) with Lean Pork &amp; Coconut Oil</h3>
+                        <p class="meal-desc">Traditional vegetable stew cooked in coconut oil to extract fat-soluble vitamins from the squash and string beans.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">450 <span>Calories</span></div>
+                            <div class="macro-item">25g <span>Protein</span></div>
+                            <div class="macro-item">30g <span>Carbs</span></div>
+                            <div class="macro-item">25g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(42)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-42-menuGrid" onclick="addToCart(&#39;42-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Ginataang Gulay (Mixed Veggies in Coconut Milk) with Tofu</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Ginataang Gulay (Mixed Veggies in Coconut Milk) with Tofu</h3>
+                        <p class="meal-desc">Squash, string beans, and eggplant simmered in coconut milk with crispy tofu cubes.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">440 <span>Calories</span></div>
+                            <div class="macro-item">20g <span>Protein</span></div>
+                            <div class="macro-item">35g <span>Carbs</span></div>
+                            <div class="macro-item">25g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(43)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-43-menuGrid" onclick="addToCart(&#39;43-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Chopsuey (Vegetable Stir-fry) with Chicken Breast</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Chopsuey (Vegetable Stir-fry) with Chicken Breast</h3>
+                        <p class="meal-desc">Crisp vegetables stir-fried in a light garlic sauce, providing high fiber and raw enzymes.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">400 <span>Calories</span></div>
+                            <div class="macro-item">30g <span>Protein</span></div>
+                            <div class="macro-item">25g <span>Carbs</span></div>
+                            <div class="macro-item">18g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(44)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-44-menuGrid" onclick="addToCart(&#39;44-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Laing (Taro leaves in Coconut Milk) with Grilled Tilapia</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Laing (Taro leaves in Coconut Milk) with Grilled Tilapia</h3>
+                        <p class="meal-desc">Spicy, creamy taro leaves rich in iron, paired with light, flaky tilapia.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">470 <span>Calories</span></div>
+                            <div class="macro-item">30g <span>Protein</span></div>
+                            <div class="macro-item">25g <span>Carbs</span></div>
+                            <div class="macro-item">28g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(45)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-45-menuGrid" onclick="addToCart(&#39;45-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Ube (Purple Yam) &amp; Oatmeal Porridge with Chia Seeds</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Ube (Purple Yam) &amp; Oatmeal Porridge with Chia Seeds</h3>
+                        <p class="meal-desc">A sweet, antioxidant-rich breakfast bowl using real ube, oats, and chia seeds for glowing skin.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">380 <span>Calories</span></div>
+                            <div class="macro-item">10g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">12g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(46)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-46-menuGrid" onclick="addToCart(&#39;46-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Ginataang Langka (Jackfruit) with Malunggay</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Ginataang Langka (Jackfruit) with Malunggay</h3>
+                        <p class="meal-desc">Unripe jackfruit simmered in coconut milk with moringa leaves, rich in fiber and phytonutrients.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">430 <span>Calories</span></div>
+                            <div class="macro-item">15g <span>Protein</span></div>
+                            <div class="macro-item">35g <span>Carbs</span></div>
+                            <div class="macro-item">25g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(47)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-47-menuGrid" onclick="addToCart(&#39;47-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Beef Nilaga with Bone Broth &amp; Cabbage</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Diwata Plan</div>
+                        <h3 class="meal-title">Beef Nilaga with Bone Broth &amp; Cabbage</h3>
+                        <p class="meal-desc">Clear beef soup using collagen-rich bone broth, cabbage, and sweet potato.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">450 <span>Calories</span></div>
+                            <div class="macro-item">35g <span>Protein</span></div>
+                            <div class="macro-item">20g <span>Carbs</span></div>
+                            <div class="macro-item">22g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(48)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-48-menuGrid" onclick="addToCart(&#39;48-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Hearty Mushroom &amp; Tofu Adobo with Brown Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Hearty Mushroom &amp; Tofu Adobo with Brown Rice</h3>
+                        <p class="meal-desc">The Philippines' national dish reimagined. Meaty oyster mushrooms and firm tofu braised in classic soy and vinegar, served with brown rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">520 <span>Calories</span></div>
+                            <div class="macro-item">25g <span>Protein</span></div>
+                            <div class="macro-item">60g <span>Carbs</span></div>
+                            <div class="macro-item">18g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(49)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-49-menuGrid" onclick="addToCart(&#39;49-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Vegan Kare-Kare with Banana Blossom</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Vegan Kare-Kare with Banana Blossom</h3>
+                        <p class="meal-desc">Traditional peanut stew made entirely vegan with eggplant and banana blossom, served with brown rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">550 <span>Calories</span></div>
+                            <div class="macro-item">20g <span>Protein</span></div>
+                            <div class="macro-item">70g <span>Carbs</span></div>
+                            <div class="macro-item">22g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(50)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-50-menuGrid" onclick="addToCart(&#39;50-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Bicolano Laing with Taro &amp; Steamed Sweet Potato</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Bicolano Laing with Taro &amp; Steamed Sweet Potato</h3>
+                        <p class="meal-desc">Dried taro leaves simmered in rich coconut milk and chili, served with steamed sweet potato.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">540 <span>Calories</span></div>
+                            <div class="macro-item">12g <span>Protein</span></div>
+                            <div class="macro-item">65g <span>Carbs</span></div>
+                            <div class="macro-item">26g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(51)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-51-menuGrid" onclick="addToCart(&#39;51-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Vegan Sisig (Mushroom/Tofu) with Cauliflower Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Vegan Sisig (Mushroom/Tofu) with Cauliflower Rice</h3>
+                        <p class="meal-desc">Chopped mushrooms and tofu cooked sisig-style with vegan mayo and calamansi, served over cauliflower rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">480 <span>Calories</span></div>
+                            <div class="macro-item">25g <span>Protein</span></div>
+                            <div class="macro-item">30g <span>Carbs</span></div>
+                            <div class="macro-item">28g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(52)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-52-menuGrid" onclick="addToCart(&#39;52-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Ginataang Kalabasa &amp; Sitaw (String Beans) with Quinoa</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Ginataang Kalabasa &amp; Sitaw (String Beans) with Quinoa</h3>
+                        <p class="meal-desc">Squash and string beans in coconut milk, served over protein-rich quinoa.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">500 <span>Calories</span></div>
+                            <div class="macro-item">15g <span>Protein</span></div>
+                            <div class="macro-item">65g <span>Carbs</span></div>
+                            <div class="macro-item">18g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(53)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-53-menuGrid" onclick="addToCart(&#39;53-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Vegan Kare-Kare with Tofu Puffs &amp; String Beans</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Vegan Kare-Kare with Tofu Puffs &amp; String Beans</h3>
+                        <p class="meal-desc">Peanut stew made vegan with tofu puffs and string beans, served with brown rice.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">530 <span>Calories</span></div>
+                            <div class="macro-item">22g <span>Protein</span></div>
+                            <div class="macro-item">65g <span>Carbs</span></div>
+                            <div class="macro-item">22g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(54)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-54-menuGrid" onclick="addToCart(&#39;54-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Lumpiang Togue (Mung Bean Spring Rolls) with Sweet Chili</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Lumpiang Togue (Mung Bean Spring Rolls) with Sweet Chili</h3>
+                        <p class="meal-desc">Baked (not fried) spring rolls stuffed with mung bean sprouts and carrots, served with a vegan sweet chili dip.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">480 <span>Calories</span></div>
+                            <div class="macro-item">20g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">20g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(55)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-55-menuGrid" onclick="addToCart(&#39;55-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Pinakbet Tagalog (Vegan) with Brown Rice</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Pinakbet Tagalog (Vegan) with Brown Rice</h3>
+                        <p class="meal-desc">Mixed vegetables cooked in a vegan shrimp paste alternative for that authentic umami flavor.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">460 <span>Calories</span></div>
+                            <div class="macro-item">15g <span>Protein</span></div>
+                            <div class="macro-item">60g <span>Carbs</span></div>
+                            <div class="macro-item">18g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(56)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-56-menuGrid" onclick="addToCart(&#39;56-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Tofu Binagoongan (Vegan Shrimp Paste) with Quinoa</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Tofu Binagoongan (Vegan Shrimp Paste) with Quinoa</h3>
+                        <p class="meal-desc">Crispy tofu cubes smothered in a savory, slightly sweet vegan bagoong sauce, served with quinoa.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">520 <span>Calories</span></div>
+                            <div class="macro-item">25g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">20g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(57)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-57-menuGrid" onclick="addToCart(&#39;57-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Vegan Menudo (Soy Chunks/Mushroom) with Mashed Kamote</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Vegan Menudo (Soy Chunks/Mushroom) with Mashed Kamote</h3>
+                        <p class="meal-desc">Tomato-based stew using textured soy protein and mushrooms instead of pork, served over mashed sweet potato.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">500 <span>Calories</span></div>
+                            <div class="macro-item">25g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">18g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(58)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-58-menuGrid" onclick="addToCart(&#39;58-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Ginataang Munggo (Mung Bean Stew) with Jackfruit &amp; Spinach</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Ginataang Munggo (Mung Bean Stew) with Jackfruit &amp; Spinach</h3>
+                        <p class="meal-desc">Protein-packed mung beans simmered in coconut milk with shredded unripe jackfruit and spinach.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">530 <span>Calories</span></div>
+                            <div class="macro-item">20g <span>Protein</span></div>
+                            <div class="macro-item">65g <span>Carbs</span></div>
+                            <div class="macro-item">20g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(59)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-59-menuGrid" onclick="addToCart(&#39;59-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div><div class="meal-card">
+                    <div class="meal-img"><span>Vegan Lumpiang Shanghai with Sweet Chili</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">Halaman Plan</div>
+                        <h3 class="meal-title">Vegan Lumpiang Shanghai with Sweet Chili</h3>
+                        <p class="meal-desc">Plant-based ground meat alternative wrapped and baked, served with sweet chili sauce.</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">470 <span>Calories</span></div>
+                            <div class="macro-item">18g <span>Protein</span></div>
+                            <div class="macro-item">55g <span>Carbs</span></div>
+                            <div class="macro-item">20g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(60)">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-60-menuGrid" onclick="addToCart(&#39;60-menuGrid&#39;)">Add to Plan</button>
+                        </div>
+                    </div>
+                </div></div>
+        </div>
+    </div>
+
+    <!-- Recipe Modal -->
+    <div class="modal-overlay" id="recipeModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <span class="close-modal" onclick="closeModal()">×</span>
+            <div id="modalBody"></div>
+        </div>
+    </div>
+
+    <script>
+        // --- GLOBAL STATE & NAVIGATION ---
+        let cart = 0;
+        let currentStep = 1;
+        let selectedDays = [];
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page-view').forEach(view => view.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            
+            document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+            const navItem = document.getElementById('nav-' + pageId);
+            if (navItem) navItem.classList.add('active');
+            
+            window.scrollTo(0, 0);
+        }
+
+        // --- BLUEPRINT QUIZ LOGIC ---
+        function nextStep(step) {
+            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
+            document.getElementById('step' + step).classList.add('active');
+            currentStep = step;
+            let progress = (currentStep / 4) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+            window.scrollTo(0, 0);
+        }
+
+        function calculateResults() {
+            const sex = document.getElementById('sex').value;
+            const age = parseInt(document.getElementById('age').value);
+            const weight = parseFloat(document.getElementById('weight').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const activity = parseFloat(document.getElementById('activity').value);
+            const goal = document.getElementById('goal').value;
+            const spice = document.getElementById('spice').value;
+            const allergy = document.getElementById('allergy').value;
+
+            // 1. BMR (Mifflin-St Jeor)
+            let bmr = 10 * weight + 6.25 * height - 5 * age;
+            bmr = sex === 'male' ? bmr + 5 : bmr - 161;
+
+            // 2. TDEE
+            let tdee = bmr * activity;
+
+            // 3. Goal Calories & Time to Goal Math
+            let targetCalories = tdee;
+            let goalText = "Maintain Weight & Fuel";
+            let timeToGoalText = "";
+            
+            let idealWeightMin = 18.5 * Math.pow(height/100, 2);
+            let idealWeightMax = 24.9 * Math.pow(height/100, 2);
+            let idealWeightMid = (idealWeightMin + idealWeightMax) / 2;
+            let weightDifference = Math.abs(weight - idealWeightMid);
+
+            if (goal === 'lose') {
+                targetCalories = tdee - 500;
+                goalText = "Lose Weight (Calorie Deficit)";
+                let weeksToLose = Math.ceil(weightDifference / 0.45); 
+                timeToGoalText = `At a 500-calorie daily deficit, you will lose approximately 0.45kg per week. To reach your ideal weight of ${idealWeightMid.toFixed(1)}kg, it will take an estimated <strong>${weeksToLose} weeks</strong>.`;
+            } else if (goal === 'bulk') {
+                targetCalories = tdee + 400;
+                goalText = "Gain Muscle (Calorie Surplus)";
+                let weeksToGain = Math.ceil(weightDifference / 0.25); 
+                timeToGoalText = `At a 400-calorie daily surplus, you will gain approximately 0.25kg of lean mass per week. To reach your target weight of ${idealWeightMid.toFixed(1)}kg, it will take an estimated <strong>${weeksToGain} weeks</strong>.`;
+            } else {
+                timeToGoalText = `Your goal is maintenance. These calories will keep you at your current weight while fueling your daily activities.`;
+            }
+
+            // 4. BMI
+            let bmi = weight / Math.pow(height/100, 2);
+
+            // 5. Plan Routing
+            let recommendedPlan = "";
+            let exerciseAdvice = "";
+            if (sex === 'male' && goal === 'bulk') {
+                recommendedPlan = "Makata"; exerciseAdvice = "To ensure this surplus builds muscle rather than storing as fat, a structured strength training program (weightlifting 3-5x a week) is an absolute must.";
+            } else if (sex === 'male') {
+                recommendedPlan = "Lakan"; exerciseAdvice = "To maintain your physique, keep your body moving. A mix of strength training and moderate cardio 3-4x a week will keep your metabolism sharp.";
+            } else if (sex === 'female' && goal === 'lose') {
+                recommendedPlan = "Mutya"; exerciseAdvice = "To preserve muscle while losing fat, this plan must be paired with resistance training (pilates, weights, or bodyweight exercises) 3-4x a week.";
+            } else if (sex === 'female') {
+                recommendedPlan = "Diwata"; exerciseAdvice = "Focus on active recovery, yoga, or light strength training. Nourish your body, keep it moving gently, and let the nutrients do the glowing.";
+            }
+
+            // 6. Display Results
+            document.getElementById('results-output').innerHTML = `
+                <div class="blueprint-section">
+                    <p><strong>Recommended Plan:</strong> <span class="highlight">The ${recommendedPlan} Plan</span></p>
+                    <p><strong>Your Daily Target:</strong> <span class="highlight">${Math.round(targetCalories)} kcal</span> (${goalText})</p>
+                    <p><strong>Your BMI:</strong> ${bmi.toFixed(1)} (Ideal weight range: ${idealWeightMin.toFixed(0)}kg - ${idealWeightMax.toFixed(0)}kg)</p>
+                </div>
+                <div class="blueprint-section">
+                    <p><strong>⏳ Your Timeline to Goal:</strong></p>
+                    <p>${timeToGoalText}</p>
+                </div>
+                <div class="blueprint-section">
+                    <p><strong>⚡ The Exercise Mandate:</strong></p>
+                    <p>${exerciseAdvice} Nutrition provides the building blocks, but exercise is the architect.</p>
+                </div>
+                <div class="disclaimer">
+                    <strong>A Note on Individuality:</strong> Everyone's metabolism is different. The calculations above are mathematically sound estimations, but your actual real-world results may vary slightly. Listen to your body, adjust if needed, and trust the process.
+                </div>
+            `;
+
+            // 7. Filter Menu for Blueprint
+            renderMenu(recommendedPlan, 'blueprintMenuGrid', spice, allergy);
+            
+            // 8. Render Calendar
+            renderCalendar();
+            
+            nextStep(3);
+        }
+
+        function renderCalendar() {
+            let days = parseInt(document.getElementById('duration').value);
+            let calendarHTML = '';
+            selectedDays = []; 
+            for (let i = 1; i <= days; i++) {
+                calendarHTML += `<div class="calendar-day" onclick="toggleDay(this, ${i})">Day ${i}</div>`;
+            }
+            document.getElementById('calendar').innerHTML = calendarHTML;
+        }
+
+        function toggleDay(element, day) {
+            if (element.classList.contains('selected')) {
+                element.classList.remove('selected');
+                selectedDays = selectedDays.filter(d => d !== day);
+            } else {
+                element.classList.add('selected');
+                selectedDays.push(day);
+            }
+        }
+
+        function finalizeOrder() {
+            let duration = document.getElementById('duration').value;
+            document.getElementById('cart-summary').innerHTML = `
+                <p><strong>Subscription Length:</strong> ${duration} Days</p>
+                <p><strong>Delivery Days Selected:</strong> ${selectedDays.length} days</p>
+            `;
+            nextStep(4);
+        }
+
+        // --- 60 MEAL MASTER MENU DATA ---
+        const menuData = [
+            { id: 1, plan: "Makata", name: "Slow-Braised Beef Kaldereta", desc: "A timeless Filipino fiesta favorite. Slow-braised premium beef in a rich tomato sauce with olives and peppers, served over organic red rice.", kcal: 850, protein: 55, carbs: 65, fat: 38, tags: ["Beef", "Non-Spicy"], ingredients: ["200g premium beef chuck", "1 cup tomato sauce", "1/2 cup liver spread", "1 large potato (cubed)", "1 carrot", "1 red bell pepper", "1 cup organic red rice", "Olive oil, garlic, onion, bay leaves"], method: ["Sear beef in olive oil until browned.", "Sauté garlic, onion, and tomato sauce.", "Add beef, liver spread, bay leaves, and water. Simmer for 2 hours until tender.", "Add potatoes, carrots, and bell peppers. Cook until veg is soft.", "Serve hot over cooked organic red rice."] },
+            { id: 2, plan: "Makata", name: "Sweet & Savory Pork Humba", desc: "Comforting Visayan classic. Pork belly braised in soy, vinegar, and black beans, paired with high-protein quinoa and a boiled egg.", kcal: 920, protein: 60, carbs: 70, fat: 42, tags: ["Pork", "Non-Spicy"], ingredients: ["200g pork belly", "Soy sauce", "Vinegar", "Black beans", "Banana blossoms", "Quinoa", "1 Hard-boiled egg"], method: ["Braise pork in soy, vinegar, and black beans until tender.", "Add banana blossoms in the last 30 minutes.", "Serve over cooked quinoa with a halved hard-boiled egg."] },
+            { id: 3, plan: "Makata", name: "Chicken Tinola with Malunggay & Brown Rice", desc: "Hearty chicken soup with green papaya and fresh malunggay leaves, served with generous portions of fibrous brown rice.", kcal: 750, protein: 50, carbs: 60, fat: 30, tags: ["Chicken", "Non-Spicy"], ingredients: ["Chicken thighs", "Green papaya", "Malunggay leaves", "Ginger", "Garlic", "Onion", "Brown rice"], method: ["Sauté garlic, ginger, and onion.", "Add chicken and brown slightly.", "Add water and bring to a boil.", "Add papaya and cook until tender.", "Add malunggay. Serve with brown rice."] },
+            { id: 4, plan: "Makata", name: "Bistek Tagalog with Mashed Kamote", desc: "Beef sirloin marinated in soy and calamansi, fried with onions, served over creamy mashed sweet potato (kamote).", kcal: 820, protein: 55, carbs: 60, fat: 35, tags: ["Beef", "Non-Spicy"], ingredients: ["Beef sirloin", "Soy sauce", "Calamansi", "Onions", "Sweet potato (kamote)", "Butter"], method: ["Marinate beef in soy and calamansi.", "Sear beef quickly. Sauté onions until soft.", "Simmer beef in marinade.", "Boil and mash kamote with butter.", "Serve beef over mash."] },
+            { id: 5, plan: "Makata", name: "Lechon Kawali (Air-Fried) with Java Rice", desc: "Crispy pork belly cooked in an air-fryer to reduce excess oil while keeping the crackling skin, served with annatto-infused Java rice.", kcal: 900, protein: 60, carbs: 65, fat: 45, tags: ["Pork", "Non-Spicy"], ingredients: ["Pork belly", "Salt", "Peppercorns", "Bay leaves", "Jasmine rice", "Annatto oil"], method: ["Boil pork with salt, peppercorns, and bay leaves until tender.", "Cool and dry pork completely.", "Air-fry at 200°C until skin is crackling.", "Cook rice with annatto oil.", "Serve together."] },
+            { id: 6, plan: "Makata", name: "Tapa de Manila with Garlic Rice & Fried Egg", desc: "Sweet and savory beef tapa, paired with garlic brown rice and a sunny-side-up egg for the ultimate muscle-building meal.", kcal: 880, protein: 55, carbs: 70, fat: 40, tags: ["Beef", "Non-Spicy"], ingredients: ["Beef sirloin", "Soy sauce", "Sugar", "Garlic", "Calamansi", "Brown rice", "Egg"], method: ["Marinate beef in soy, sugar, garlic, and calamansi overnight.", "Fry tapa until caramelized.", "Fry egg sunny-side up.", "Serve with garlic brown rice."] },
+            { id: 7, plan: "Makata", name: "Mechado (Beef Stew) with Quinoa", desc: "Tomato-based beef stew with a fork-tender texture, served over quinoa to add complete plant proteins.", kcal: 810, protein: 50, carbs: 60, fat: 38, tags: ["Beef", "Non-Spicy"], ingredients: ["Beef chuck", "Tomato sauce", "Soy sauce", "Potatoes", "Carrots", "Bell peppers", "Quinoa"], method: ["Brown beef. Add tomato sauce and soy sauce.", "Simmer until beef is tender.", "Add potatoes, carrots, and peppers.", "Serve over cooked quinoa."] },
+            { id: 8, plan: "Makata", name: "Crispy Pata Flakes with Pesto Brown Rice", desc: "Shredded crispy pata mixed with a light soy-calamansi glaze, served with brown rice tossed in a mild basil pesto.", kcal: 950, protein: 65, carbs: 55, fat: 50, tags: ["Pork", "Non-Spicy"], ingredients: ["Pork pata (shredded)", "Soy sauce", "Calamansi", "Brown rice", "Basil pesto"], method: ["Boil and shred pata meat.", "Deep fry or air-fry shredded meat until crispy.", "Toss in soy-calamansi glaze.", "Mix brown rice with pesto and serve."] },
+            { id: 9, plan: "Makata", name: "Pork Ginataan with Langka & Red Rice", desc: "Pork simmered in rich coconut milk with tender jackfruit (langka), served with red rice.", kcal: 830, protein: 50, carbs: 65, fat: 40, tags: ["Pork", "Spicy"], ingredients: ["Pork shoulder", "Coconut milk", "Jackfruit (langka)", "Chili", "Red rice"], method: ["Brown pork. Add coconut milk and jackfruit.", "Simmer until pork is tender and sauce reduces.", "Add chili. Serve with red rice."] },
+            { id: 10, plan: "Makata", name: "Sisig (Pork/Chicken Mix) with Garlic Quinoa", desc: "A 50/50 blend of pork and chicken to keep the flavor but boost protein, served over quinoa instead of rice.", kcal: 880, protein: 60, carbs: 55, fat: 45, tags: ["Pork", "Spicy"], ingredients: ["Pork belly", "Chicken breast", "Onions", "Chili", "Calamansi", "Quinoa"], method: ["Boil and chop meats. Crisp them up in a pan.", "Add onions, chili, and calamansi.", "Serve over garlic quinoa."] },
+            { id: 11, plan: "Makata", name: "Beef Pares with Brown Rice", desc: "Sweet and savory beef broth stew, paired with brown rice for complex carbohydrates.", kcal: 780, protein: 50, carbs: 65, fat: 28, tags: ["Beef", "Non-Spicy"], ingredients: ["Beef brisket", "Soy sauce", "Star anise", "Sugar", "Garlic", "Onion", "Brown rice"], method: ["Boil beef until tender.", "Sauté garlic and onion, add beef and soy sauce.", "Simmer with star anise and sugar.", "Serve with brown rice."] },
+            { id: 12, plan: "Makata", name: "Lechon Paksiw with Quinoa", desc: "Leftover lechon style pork simmered in a sweet-sour liver sauce, served over protein-rich quinoa.", kcal: 840, protein: 55, carbs: 60, fat: 38, tags: ["Pork", "Non-Spicy"], ingredients: ["Pork belly", "Liver spread", "Vinegar", "Soy sauce", "Sugar", "Quinoa"], method: ["Sear pork.", "Add vinegar, soy, sugar, and liver spread.", "Simmer until sauce is thick.", "Serve over quinoa."] },
+
+            { id: 13, plan: "Lakan", name: "Charred Chicken Inasal with Java Rice & Atchara", desc: "The pride of Bacolod. Chicken marinated 24hrs in lemongrass and calamansi, grilled to perfection. Served with Java rice and fresh atchara.", kcal: 650, protein: 48, carbs: 55, fat: 22, tags: ["Chicken", "Non-Spicy"], ingredients: ["Chicken thigh", "Lemongrass", "Calamansi", "Ginger", "Annatto oil", "Jasmine rice", "Papaya", "Carrots", "Vinegar"], method: ["Marinate chicken in lemongrass, calamansi, ginger, and annatto for 24 hrs.", "Grill until charred and cooked through.", "Cook rice with annatto oil for Java rice.", "Serve with fresh papaya atchara."] },
+            { id: 14, plan: "Lakan", name: "Seared Tuna Belly with Garlic Brown Rice & Kangkong", desc: "Omega-3 rich tuna belly lightly seared, served with garlic brown rice and sautéed water spinach.", kcal: 580, protein: 45, carbs: 50, fat: 18, tags: ["Seafood", "Non-Spicy"], ingredients: ["150g Tuna belly", "Garlic", "Brown rice", "Water spinach (Kangkong)", "Olive oil"], method: ["Sear tuna belly in olive oil for 2-3 mins per side.", "Sauté kangkong in garlic.", "Serve with cooked brown rice."] },
+            { id: 15, plan: "Lakan", name: "Pork Sinigang (Pork Belly) with Brown Rice", desc: "Classic tamarind soup with tender pork, string beans, and radish, paired with fibrous brown rice.", kcal: 620, protein: 40, carbs: 55, fat: 25, tags: ["Pork", "Non-Spicy"], ingredients: ["Pork belly", "Tamarind base", "Radish", "String beans", "Water spinach", "Tomato", "Onion", "Brown rice"], method: ["Boil pork until tender.", "Add tamarind base, tomato, and onion.", "Add radish and string beans.", "Add water spinach last. Serve with brown rice."] },
+            { id: 16, plan: "Lakan", name: "Chicken Adobo (Flaked) with Quinoa", desc: "Chicken adobo cooked until the sauce evaporates, then flaked and sautéed in its own oil, served over quinoa.", kcal: 560, protein: 45, carbs: 50, fat: 18, tags: ["Chicken", "Non-Spicy"], ingredients: ["Chicken breast", "Soy sauce", "Vinegar", "Garlic", "Bay leaves", "Quinoa"], method: ["Simmer chicken in soy, vinegar, garlic, and bay leaves.", "Remove chicken and flake.", "Reduce sauce and toss flaked chicken back in.", "Serve over quinoa."] },
+            { id: 17, plan: "Lakan", name: "Beef Pares with Mashed Kamote", desc: "Sweet and savory beef broth stew, served with mashed sweet potato instead of the traditional rice.", kcal: 600, protein: 45, carbs: 50, fat: 22, tags: ["Beef", "Non-Spicy"], ingredients: ["Beef brisket", "Soy sauce", "Star anise", "Garlic", "Sweet potato (kamote)", "Butter"], method: ["Boil beef until tender.", "Sauté garlic, add beef and soy sauce.", "Simmer with star anise.", "Boil and mash kamote with butter. Serve together."] },
+            { id: 18, plan: "Lakan", name: "Ginataang Tilapia with Red Rice", desc: "Fresh tilapia simmered in coconut milk and spinach, served with red rice.", kcal: 550, protein: 40, carbs: 50, fat: 18, tags: ["Seafood", "Non-Spicy"], ingredients: ["Tilapia", "Coconut milk", "Spinach", "Ginger", "Onion", "Red rice"], method: ["Sauté ginger and onion.", "Add coconut milk and bring to a simmer.", "Add tilapia and cook through.", "Add spinach. Serve with red rice."] },
+            { id: 19, plan: "Lakan", name: "Pork BBQ Skewers with Java Rice", desc: "Sweet-style Filipino pork BBQ, grilled to perfection, served with a light Java rice.", kcal: 630, protein: 45, carbs: 55, fat: 22, tags: ["Pork", "Non-Spicy"], ingredients: ["Pork shoulder", "Soy sauce", "Banana ketchup", "7-Up", "Garlic", "Jasmine rice", "Annatto oil"], method: ["Marinate pork in soy, ketchup, 7-Up, and garlic.", "Grill until caramelized.", "Cook rice with annatto oil.", "Serve together."] },
+            { id: 20, plan: "Lakan", name: "Chicken Bistek with Brown Rice", desc: "Chicken breast sliced thin, marinated in soy and calamansi, topped with onion rings.", kcal: 590, protein: 45, carbs: 50, fat: 20, tags: ["Chicken", "Non-Spicy"], ingredients: ["Chicken breast", "Soy sauce", "Calamansi", "Onions", "Garlic", "Brown rice"], method: ["Marinate chicken in soy and calamansi.", "Sear chicken. Sauté onions.", "Simmer chicken in marinade.", "Serve with brown rice."] },
+            { id: 21, plan: "Lakan", name: "Bangus (Milkfish) Fried in Coconut Oil with Garlic Rice", desc: "Boneless bangus pan-fried in healthy coconut oil, served with brown garlic rice.", kcal: 610, protein: 42, carbs: 50, fat: 25, tags: ["Seafood", "Non-Spicy"], ingredients: ["Boneless bangus", "Coconut oil", "Garlic", "Brown rice"], method: ["Fry bangus in coconut oil until golden.", "Sauté garlic and mix with cooked brown rice.", "Serve together."] },
+            { id: 22, plan: "Lakan", name: "Dinuguan (Pork Blood Stew) with Puto", desc: "Rich, savory blood stew made with lean pork cuts, served with steamed rice cakes (puto).", kcal: 580, protein: 40, carbs: 55, fat: 20, tags: ["Pork", "Non-Spicy"], ingredients: ["Lean pork", "Pork blood", "Vinegar", "Garlic", "Onion", "Green chili", "Rice flour (for puto)"], method: ["Sauté garlic and onion. Add pork and brown.", "Add vinegar and pork blood. Simmer until thick.", "Add chili.", "Steam puto. Serve together."] },
+            { id: 23, plan: "Lakan", name: "Chicken Caldereta with Brown Rice", desc: "Tomato-based chicken stew with potatoes and bell peppers, paired with brown rice.", kcal: 640, protein: 45, carbs: 55, fat: 22, tags: ["Chicken", "Non-Spicy"], ingredients: ["Chicken thighs", "Tomato sauce", "Liver spread", "Potatoes", "Carrots", "Bell peppers", "Brown rice"], method: ["Brown chicken. Add tomato sauce and liver spread.", "Simmer until chicken is cooked.", "Add potatoes, carrots, and peppers.", "Serve with brown rice."] },
+            { id: 24, plan: "Lakan", name: "Embutido (Steamed Meatloaf) with Sweet Potato", desc: "Filipino-style meatloaf stuffed with eggs and sausages, served with steamed sweet potato.", kcal: 610, protein: 45, carbs: 50, fat: 22, tags: ["Pork", "Non-Spicy"], ingredients: ["Ground pork", "Sausage", "Boiled egg", "Breadcrumbs", "Raisins", "Sweet potato"], method: ["Mix pork, breadcrumbs, raisins.", "Flatten, place egg and sausage in center, roll.", "Steam for 1 hour.", "Slice and serve with steamed sweet potato."] },
+
+            { id: 25, plan: "Mutya", name: "Sinigang na Salmon with Cauliflower Rice", desc: "Comforting tamarind soup with fresh salmon, radish, and greens. Served over cauliflower rice to keep carbs minimal.", kcal: 420, protein: 38, carbs: 12, fat: 24, tags: ["Seafood", "Non-Spicy"], ingredients: ["150g salmon belly", "Tamarind soup base", "Radish", "Okra", "String beans", "Water spinach", "Cauliflower rice", "Tomato", "Onion"], method: ["Boil water with tamarind base, tomato, and onion.", "Add radish and okra. Cook 5 mins.", "Add salmon belly and cook for 5 mins.", "Add string beans and water spinach. Turn off heat.", "Sauté cauliflower rice in garlic and serve on the side."] },
+            { id: 26, plan: "Mutya", name: "Garlic Butter Shrimp over Zucchini Noodles", desc: "Plump local shrimp sautéed in garlic, butter, and calamansi. Served over fresh zucchini noodles instead of pasta.", kcal: 380, protein: 32, carbs: 9, fat: 24, tags: ["Seafood", "Spicy"], ingredients: ["150g shrimp", "Garlic", "Butter", "Calamansi", "Chili flakes", "Zucchini noodles"], method: ["Sauté shrimp in garlic and butter.", "Add calamansi and chili flakes.", "Toss over zucchini noodles and serve immediately."] },
+            { id: 27, plan: "Mutya", name: "Bistek na Tuna with Cauliflower Rice", desc: "Tuna steaks marinated in soy and calamansi, topped with onions, served with cauliflower rice.", kcal: 400, protein: 38, carbs: 12, fat: 18, tags: ["Seafood", "Non-Spicy"], ingredients: ["Tuna steak", "Soy sauce", "Calamansi", "Onions", "Cauliflower rice"], method: ["Marinate tuna in soy and calamansi.", "Sear tuna quickly. Sauté onions.", "Simmer tuna in marinade briefly.", "Serve with cauliflower rice."] },
+            { id: 28, plan: "Mutya", name: "Inasal Chicken Breast (Skinless) with Side Salad", desc: "Lechon-skin removed, marinated in Inasal spices, grilled, and served with a crisp cucumber and tomato salad.", kcal: 390, protein: 42, carbs: 15, fat: 16, tags: ["Chicken", "Non-Spicy"], ingredients: ["Chicken breast", "Lemongrass", "Calamansi", "Ginger", "Annatto oil", "Cucumber", "Tomato"], method: ["Marinate breast in lemongrass, calamansi, ginger, annatto.", "Grill until cooked.", "Slice and serve over fresh cucumber and tomato salad."] },
+            { id: 29, plan: "Mutya", name: "Adobo Flakes (Chicken Breast) with Cauliflower Rice", desc: "Shredded chicken breast adobo, toasted in coconut oil until crispy, served over cauliflower rice.", kcal: 420, protein: 40, carbs: 10, fat: 24, tags: ["Chicken", "Non-Spicy"], ingredients: ["Chicken breast", "Soy sauce", "Vinegar", "Garlic", "Coconut oil", "Cauliflower rice"], method: ["Boil chicken in soy, vinegar, and garlic.", "Shred chicken.", "Toast shreds in coconut oil until crispy.", "Serve over cauliflower rice."] },
+            { id: 30, plan: "Mutya", name: "Steamed Tahong (Mussels) in Ginger Broth", desc: "High-protein, low-calorie mussels steamed in ginger and garlic. A light, filling meal.", kcal: 300, protein: 28, carbs: 8, fat: 12, tags: ["Seafood", "Non-Spicy"], ingredients: ["Mussels", "Ginger", "Garlic", "Onion", "Water"], method: ["Sauté ginger, garlic, and onion.", "Add water and bring to a boil.", "Add mussels and cover until they open.", "Serve hot."] },
+            { id: 31, plan: "Mutya", name: "Ginataang Kalabasa & Shrimp (No Rice)", desc: "Squash and shrimp simmered in a light coconut milk broth, heavy on the squash for fiber.", kcal: 380, protein: 25, carbs: 15, fat: 20, tags: ["Seafood", "Non-Spicy"], ingredients: ["Squash (kalabasa)", "Shrimp", "Coconut milk", "Garlic", "Onion", "Spinach"], method: ["Sauté garlic and onion.", "Add coconut milk and squash. Simmer until soft.", "Add shrimp and spinach. Cook until shrimp is pink."] },
+            { id: 32, plan: "Mutya", name: "Bangus Sisig (Milkfish) with Lettuce Wraps", desc: "Flaked milkfish sisig served with crisp iceberg lettuce leaves instead of rice.", kcal: 400, protein: 35, carbs: 10, fat: 22, tags: ["Seafood", "Spicy"], ingredients: ["Milkfish (bangus)", "Onions", "Chili", "Calamansi", "Mayo", "Lettuce"], method: ["Flake boiled milkfish.", "Sauté with onions, chili, calamansi, and a touch of mayo.", "Serve with crisp lettuce leaves."] },
+            { id: 33, plan: "Mutya", name: "Chicken Pochero (Clear Broth, Lean Cuts)", desc: "Tomato-based chicken stew with banana and cabbage, using chicken breast to keep fats low.", kcal: 390, protein: 35, carbs: 15, fat: 18, tags: ["Chicken", "Non-Spicy"], ingredients: ["Chicken breast", "Tomato sauce", "Saba banana", "Cabbage", "Potato", "Garlic"], method: ["Sauté garlic and chicken.", "Add tomato sauce and water.", "Add banana and potato, simmer until soft.", "Add cabbage last."] },
+            { id: 34, plan: "Mutya", name: "Pinapaitan (Bitter Stew) - Lean Cuts", desc: "Ilocano bitter stew made with lean beef cuts and bile, highly flavorful and very low calorie.", kcal: 350, protein: 35, carbs: 5, fat: 15, tags: ["Beef", "Spicy"], ingredients: ["Lean beef", "Beef bile", "Ginger", "Calamansi", "Onion", "Chili"], method: ["Boil lean beef until tender.", "Sauté ginger and onion, add beef.", "Add water, bile, and calamansi.", "Simmer and serve hot."] },
+            { id: 35, plan: "Mutya", name: "Grilled Bangus with Tomato-Onion Salad", desc: "Boneless milkfish grilled simply, served with a refreshing tomato, onion, and calamansi salad.", kcal: 410, protein: 38, carbs: 8, fat: 24, tags: ["Seafood", "Non-Spicy"], ingredients: ["Boneless bangus", "Tomato", "Onion", "Calamansi", "Salt"], method: ["Grill bangus until cooked.", "Chop tomato and onion, mix with calamansi.", "Serve fish with salad on top."] },
+            { id: 36, plan: "Mutya", name: "Sinigang na Hipon (Shrimp) with Cauliflower Rice", desc: "Sour tamarind broth loaded with shrimp and water spinach, served with cauliflower rice.", kcal: 390, protein: 32, carbs: 10, fat: 20, tags: ["Seafood", "Non-Spicy"], ingredients: ["Shrimp", "Tamarind base", "Radish", "Water spinach", "Tomato", "Onion", "Cauliflower rice"], method: ["Boil water with tamarind, tomato, onion.", "Add radish, cook 5 mins.", "Add shrimp and water spinach.", "Serve with cauliflower rice."] },
+
+            { id: 37, plan: "Diwata", name: "Ginataang Kalabasa & Malunggay with Grilled Mahi-Mahi", desc: "Creamy Bicolano stew. Sweet squash and moringa leaves in coconut milk, paired with a grilled Mahi-Mahi fillet.", kcal: 480, protein: 35, carbs: 22, fat: 28, tags: ["Fish", "Non-Spicy"], ingredients: ["150g Mahi-Mahi fillet", "1 cup cubed kalabasa", "1/2 cup coconut milk", "1 cup fresh malunggay", "Garlic", "Ginger", "Onion"], method: ["Sauté garlic, ginger, and onion.", "Add coconut milk and squash. Simmer until soft.", "Add malunggay and turn off heat.", "Grill Mahi-Mahi with salt and pepper. Serve together."] },
+            { id: 38, plan: "Diwata", name: "Fresh Lumpiang Sariwa with Chicken & Peanut Sauce", desc: "Vibrant crepe filled with sautéed jicama, carrots, cabbage, and chicken breast, draped in naturally sweetened peanut sauce.", kcal: 450, protein: 30, carbs: 35, fat: 20, tags: ["Chicken", "Non-Spicy"], ingredients: ["Lumpia wrapper", "Jicama", "Carrots", "Cabbage", "Chicken breast", "Peanut butter", "Dates (for sweetening)"], method: ["Sauté jicama, carrots, cabbage, and chicken.", "Wrap in lumpia wrapper.", "Blend peanut butter, water, and dates for sauce.", "Drizzle sauce over lumpia."] },
+            { id: 39, plan: "Diwata", name: "Ensaladang Talong (Grilled Eggplant) with Grilled Salmon", desc: "Smoky grilled eggplant salad with onions and tomatoes in vinaigrette, paired with Omega-3 rich salmon.", kcal: 460, protein: 32, carbs: 15, fat: 30, tags: ["Seafood", "Non-Spicy"], ingredients: ["Eggplant", "Salmon fillet", "Tomato", "Onion", "Vinegar", "Olive oil"], method: ["Grill eggplant until skin is charred. Peel and slice.", "Grill salmon fillet.", "Mix eggplant with tomato, onion, vinegar, and olive oil.", "Serve together."] },
+            { id: 40, plan: "Diwata", name: "Sinigang na Hipon (Shrimp) with Kangkong & Radish", desc: "Sour tamarind broth loaded with shrimp and water spinach, rich in collagen-boosting nutrients.", kcal: 400, protein: 30, carbs: 15, fat: 22, tags: ["Seafood", "Non-Spicy"], ingredients: ["Shrimp", "Tamarind base", "Radish", "Kangkong", "Tomato", "Onion"], method: ["Boil water with tamarind, tomato, onion.", "Add radish, cook 5 mins.", "Add shrimp and kangkong.", "Serve hot."] },
+            { id: 41, plan: "Diwata", name: "Kinilaw na Tuna (Filipino Ceviche) with Avocado", desc: "Raw tuna cured in vinegar and calamansi, mixed with onions, ginger, and creamy avocado for healthy fats.", kcal: 420, protein: 30, carbs: 10, fat: 28, tags: ["Seafood", "Spicy"], ingredients: ["Fresh tuna sashimi grade", "Vinegar", "Calamansi", "Ginger", "Onion", "Avocado", "Chili"], method: ["Cut tuna into cubes.", "Mix with vinegar, calamansi, ginger, onion, and chili.", "Fold in diced avocado.", "Chill before serving."] },
+            { id: 42, plan: "Diwata", name: "Pinakbet (Mixed Veggies) with Lean Pork & Coconut Oil", desc: "Traditional vegetable stew cooked in coconut oil to extract fat-soluble vitamins from the squash and string beans.", kcal: 450, protein: 25, carbs: 30, fat: 25, tags: ["Pork", "Non-Spicy"], ingredients: ["Squash", "String beans", "Eggplant", "Bitter melon", "Lean pork", "Shrimp paste", "Coconut oil"], method: ["Sauté garlic and onion in coconut oil.", "Add pork and shrimp paste.", "Add vegetables and simmer until tender."] },
+            { id: 43, plan: "Diwata", name: "Ginataang Gulay (Mixed Veggies in Coconut Milk) with Tofu", desc: "Squash, string beans, and eggplant simmered in coconut milk with crispy tofu cubes.", kcal: 440, protein: 20, carbs: 35, fat: 25, tags: ["Vegan", "Soy"], ingredients: ["Squash", "String beans", "Eggplant", "Tofu", "Coconut milk", "Onion", "Garlic"], method: ["Crisp tofu cubes in a pan.", "Sauté garlic and onion, add coconut milk and squash.", "Add other veg and tofu. Simmer until soft."] },
+            { id: 44, plan: "Diwata", name: "Chopsuey (Vegetable Stir-fry) with Chicken Breast", desc: "Crisp vegetables stir-fried in a light garlic sauce, providing high fiber and raw enzymes.", kcal: 400, protein: 30, carbs: 25, fat: 18, tags: ["Chicken", "Non-Spicy"], ingredients: ["Chicken breast", "Cabbage", "Carrots", "Snow peas", "Bell peppers", "Garlic", "Oyster sauce"], method: ["Sauté garlic and chicken.", "Add all vegetables.", "Stir fry quickly on high heat.", "Add a splash of oyster sauce and water."] },
+            { id: 45, plan: "Diwata", name: "Laing (Taro leaves in Coconut Milk) with Grilled Tilapia", desc: "Spicy, creamy taro leaves rich in iron, paired with light, flaky tilapia.", kcal: 470, protein: 30, carbs: 25, fat: 28, tags: ["Fish", "Spicy"], ingredients: ["Dried taro leaves", "Coconut milk", "Chili", "Tilapia", "Ginger", "Onion"], method: ["Simmer taro leaves in coconut milk with ginger and chili until dry and creamy.", "Grill tilapia.", "Serve together."] },
+            { id: 46, plan: "Diwata", name: "Ube (Purple Yam) & Oatmeal Porridge with Chia Seeds", desc: "A sweet, antioxidant-rich breakfast bowl using real ube, oats, and chia seeds for glowing skin.", kcal: 380, protein: 10, carbs: 55, fat: 12, tags: ["Vegan", "Non-Spicy"], ingredients: ["Ube (mashed)", "Oats", "Almond milk", "Chia seeds", "Coconut sugar"], method: ["Cook oats in almond milk.", "Stir in mashed ube.", "Top with chia seeds and a dash of coconut sugar."] },
+            { id: 47, plan: "Diwata", name: "Ginataang Langka (Jackfruit) with Malunggay", desc: "Unripe jackfruit simmered in coconut milk with moringa leaves, rich in fiber and phytonutrients.", kcal: 430, protein: 15, carbs: 35, fat: 25, tags: ["Vegan", "Non-Spicy"], ingredients: ["Unripe jackfruit", "Coconut milk", "Malunggay", "Garlic", "Onion"], method: ["Sauté garlic and onion.", "Add coconut milk and jackfruit. Simmer until tender.", "Add malunggay last."] },
+            { id: 48, plan: "Diwata", name: "Beef Nilaga with Bone Broth & Cabbage", desc: "Clear beef soup using collagen-rich bone broth, cabbage, and sweet potato.", kcal: 450, protein: 35, carbs: 20, fat: 22, tags: ["Beef", "Non-Spicy"], ingredients: ["Beef shank", "Bone broth", "Cabbage", "Sweet potato", "Peppercorns", "Onion"], method: ["Simmer beef in bone broth until very tender.", "Add sweet potato and onion.", "Add cabbage last.", "Season with salt and peppercorns."] },
+
+            { id: 49, plan: "Halaman", name: "Hearty Mushroom & Tofu Adobo with Brown Rice", desc: "The Philippines' national dish reimagined. Meaty oyster mushrooms and firm tofu braised in classic soy and vinegar, served with brown rice.", kcal: 520, protein: 25, carbs: 60, fat: 18, tags: ["Vegan", "Soy"], ingredients: ["200g oyster mushrooms", "150g firm tofu", "Soy sauce", "Vinegar", "Garlic", "Bay leaves", "Peppercorns", "Brown rice"], method: ["Sauté tofu until golden.", "Add garlic and mushrooms.", "Pour in soy, vinegar, water, bay leaves, and peppercorns.", "Simmer until sauce reduces. Serve over brown rice."] },
+            { id: 50, plan: "Halaman", name: "Vegan Kare-Kare with Banana Blossom", desc: "Traditional peanut stew made entirely vegan with eggplant and banana blossom, served with brown rice.", kcal: 550, protein: 20, carbs: 70, fat: 22, tags: ["Vegan", "Peanut"], ingredients: ["Eggplant", "Banana blossom", "Peanut butter", "Annatto oil", "Brown rice", "String beans"], method: ["Simmer peanut butter with water and annatto oil.", "Add eggplant, banana blossom, and string beans.", "Cook until vegetables are tender. Serve with brown rice."] },
+            { id: 51, plan: "Halaman", name: "Bicolano Laing with Taro & Steamed Sweet Potato", desc: "Dried taro leaves simmered in rich coconut milk and chili, served with steamed sweet potato.", kcal: 540, protein: 12, carbs: 65, fat: 26, tags: ["Vegan", "Spicy"], ingredients: ["Dried taro leaves", "Coconut milk", "Chili", "Ginger", "Onion", "Sweet potato"], method: ["Simmer taro leaves in coconut milk with ginger and chili.", "Boil sweet potato until tender.", "Serve laing with steamed sweet potato."] },
+            { id: 52, plan: "Halaman", name: "Vegan Sisig (Mushroom/Tofu) with Cauliflower Rice", desc: "Chopped mushrooms and tofu cooked sisig-style with vegan mayo and calamansi, served over cauliflower rice.", kcal: 480, protein: 25, carbs: 30, fat: 28, tags: ["Vegan", "Spicy"], ingredients: ["Mushrooms", "Tofu", "Onions", "Chili", "Vegan mayo", "Calamansi", "Cauliflower rice"], method: ["Chop and sauté mushrooms and tofu until browned.", "Add onions, chili, vegan mayo, and calamansi.", "Serve over cauliflower rice."] },
+            { id: 53, plan: "Halaman", name: "Ginataang Kalabasa & Sitaw (String Beans) with Quinoa", desc: "Squash and string beans in coconut milk, served over protein-rich quinoa.", kcal: 500, protein: 15, carbs: 65, fat: 18, tags: ["Vegan", "Non-Spicy"], ingredients: ["Squash", "String beans", "Coconut milk", "Garlic", "Onion", "Quinoa"], method: ["Sauté garlic and onion.", "Add coconut milk and squash. Simmer.", "Add string beans.", "Serve over cooked quinoa."] },
+            { id: 54, plan: "Halaman", name: "Vegan Kare-Kare with Tofu Puffs & String Beans", desc: "Peanut stew made vegan with tofu puffs and string beans, served with brown rice.", kcal: 530, protein: 22, carbs: 65, fat: 22, tags: ["Vegan", "Peanut"], ingredients: ["Tofu puffs", "String beans", "Eggplant", "Peanut butter", "Annatto oil", "Brown rice"], method: ["Simmer peanut butter, water, and annatto oil.", "Add eggplant and string beans.", "Add tofu puffs last.", "Serve with brown rice."] },
+            { id: 55, plan: "Halaman", name: "Lumpiang Togue (Mung Bean Spring Rolls) with Sweet Chili", desc: "Baked (not fried) spring rolls stuffed with mung bean sprouts and carrots, served with a vegan sweet chili dip.", kcal: 480, protein: 20, carbs: 55, fat: 20, tags: ["Vegan", "Non-Spicy"], ingredients: ["Mung bean sprouts", "Carrots", "Spring roll wrapper", "Vegan sweet chili sauce"], method: ["Sauté sprouts and carrots.", "Wrap tightly in spring roll wrappers.", "Bake at 200°C until golden and crispy.", "Serve with sweet chili sauce."] },
+            { id: 56, plan: "Halaman", name: "Pinakbet Tagalog (Vegan) with Brown Rice", desc: "Mixed vegetables cooked in a vegan shrimp paste alternative for that authentic umami flavor.", kcal: 460, protein: 15, carbs: 60, fat: 18, tags: ["Vegan", "Non-Spicy"], ingredients: ["Squash", "Eggplant", "String beans", "Okra", "Vegan bagoong", "Garlic", "Onion", "Brown rice"], method: ["Sauté garlic and onion.", "Add vegan bagoong.", "Add squash and cook slightly.", "Add other vegetables and simmer until tender.", "Serve with brown rice."] },
+            { id: 57, plan: "Halaman", name: "Tofu Binagoongan (Vegan Shrimp Paste) with Quinoa", desc: "Crispy tofu cubes smothered in a savory, slightly sweet vegan bagoong sauce, served with quinoa.", kcal: 520, protein: 25, carbs: 55, fat: 20, tags: ["Vegan", "Soy"], ingredients: ["Firm tofu", "Vegan bagoong", "Tomatoes", "Onion", "Garlic", "Quinoa"], method: ["Crisp tofu cubes.", "Sauté garlic, onion, and tomatoes.", "Add vegan bagoong.", "Toss tofu in sauce. Serve with quinoa."] },
+            { id: 58, plan: "Halaman", name: "Vegan Menudo (Soy Chunks/Mushroom) with Mashed Kamote", desc: "Tomato-based stew using textured soy protein and mushrooms instead of pork, served over mashed sweet potato.", kcal: 500, protein: 25, carbs: 55, fat: 18, tags: ["Vegan", "Soy"], ingredients: ["Textured soy protein", "Mushrooms", "Tomato sauce", "Potatoes", "Carrots", "Bell peppers", "Sweet potato (kamote)"], method: ["Rehydrate soy chunks. Sauté with mushrooms.", "Add tomato sauce and simmer.", "Add potatoes, carrots, and peppers.", "Boil and mash kamote. Serve stew over mash."] },
+            { id: 59, plan: "Halaman", name: "Ginataang Munggo (Mung Bean Stew) with Jackfruit & Spinach", desc: "Protein-packed mung beans simmered in coconut milk with shredded unripe jackfruit and spinach.", kcal: 530, protein: 20, carbs: 65, fat: 20, tags: ["Vegan", "Non-Spicy"], ingredients: ["Mung beans", "Coconut milk", "Unripe jackfruit", "Spinach", "Garlic", "Onion"], method: ["Boil mung beans until soft.", "Sauté garlic and onion. Add coconut milk.", "Add mung beans and jackfruit. Simmer.", "Add spinach last."] },
+            { id: 60, plan: "Halaman", name: "Vegan Lumpiang Shanghai with Sweet Chili", desc: "Plant-based ground meat alternative wrapped and baked, served with sweet chili sauce.", kcal: 470, protein: 18, carbs: 55, fat: 20, tags: ["Vegan", "Non-Spicy"], ingredients: ["Vegan ground meat", "Carrots", "Onions", "Spring roll wrapper", "Sweet chili sauce"], method: ["Sauté vegan meat with carrots and onions.", "Wrap tightly in wrappers.", "Bake until golden and crispy.", "Serve with sweet chili."] }
+        ];
+
+        // --- MENU RENDERING LOGIC ---
+        function renderMenu(filter = 'all', containerId = 'menuGrid', spiceFilter = 'any', allergyFilter = 'none') {
+            const grid = document.getElementById(containerId);
+            grid.innerHTML = '';
+            
+            let filteredMeals = filter === 'all' ? menuData : menuData.filter(meal => meal.plan === filter);
+            
+            // Apply Quiz Filters if provided
+            if (spiceFilter !== 'any') {
+                filteredMeals = filteredMeals.filter(meal => {
+                    if (spiceFilter === 'non-spicy') return !meal.tags.includes('Spicy');
+                    if (spiceFilter === 'spicy') return meal.tags.includes('Spicy');
+                    return true;
+                });
+            }
+            if (allergyFilter !== 'none') {
+                filteredMeals = filteredMeals.filter(meal => !meal.tags.some(t => t.toLowerCase().includes(allergyFilter)));
+            }
+
+            if(filteredMeals.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: #888;">No meals match your exact preferences, but our chefs can customize! Proceed to checkout.</p>';
+                return;
+            }
+
+            filteredMeals.forEach(meal => {
+                const card = document.createElement('div');
+                card.className = 'meal-card';
+                card.innerHTML = `
+                    <div class="meal-img"><span>${meal.name}</span></div>
+                    <div class="meal-content">
+                        <div class="meal-plan-tag">${meal.plan} Plan</div>
+                        <h3 class="meal-title">${meal.name}</h3>
+                        <p class="meal-desc">${meal.desc}</p>
+                        <div class="meal-macros">
+                            <div class="macro-item">${meal.kcal} <span>Calories</span></div>
+                            <div class="macro-item">${meal.protein}g <span>Protein</span></div>
+                            <div class="macro-item">${meal.carbs}g <span>Carbs</span></div>
+                            <div class="macro-item">${meal.fat}g <span>Fat</span></div>
+                        </div>
+                        <div class="meal-actions">
+                            <button class="btn-card btn-recipe" onclick="openModal(${meal.id})">View Recipe</button>
+                            <button class="btn-card btn-add" id="add-btn-${meal.id}-${containerId}" onclick="addToCart('${meal.id}-${containerId}')">Add to Plan</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function filterMenu(plan, event, containerId) {
+            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderMenu(plan, containerId);
+        }
+
+        function addToCart(id) {
+            cart++;
+            document.getElementById('cartCount').innerText = cart;
+            const btn = document.getElementById(`add-btn-${id}`);
+            if (btn) {
+                btn.innerText = "Added! ✓";
+                btn.classList.add('added');
+                setTimeout(() => { btn.innerText = "Add to Plan"; btn.classList.remove('added'); }, 1500);
+            }
+        }
+
+        function openModal(id) {
+            const meal = menuData.find(m => m.id === id);
+            const modalBody = document.getElementById('modalBody');
+            modalBody.innerHTML = `
+                <div class="modal-img"><span>${meal.name}</span></div>
+                <div class="modal-inner">
+                    <div class="meal-plan-tag">${meal.plan} Plan</div>
+                    <h2>${meal.name}</h2>
+                    <div class="modal-tags">
+                        ${meal.tags.map(tag => `<span class="modal-tag">${tag}</span>`).join('')}
+                        <span class="modal-tag">${meal.kcal} kcal | ${meal.protein}g P | ${meal.carbs}g C | ${meal.fat}g F</span>
+                    </div>
+                    <p style="font-style: italic; color: #555; margin-bottom: 20px;">${meal.desc}</p>
+                    <div class="recipe-section">
+                        <h4>Ingredients</h4>
+                        <ul>${meal.ingredients.map(i => `<li>${i}</li>`).join('')}</ul>
+                    </div>
+                    <div class="recipe-section">
+                        <h4>Chef's Instructions</h4>
+                        <ol>${meal.method.map(m => `<li>${m}</li>`).join('')}</ol>
+                    </div>
+                    <button class="btn-card btn-add" style="width: 100%; padding: 15px; margin-top: 10px;" onclick="addToCart('${meal.id}-modal'); document.getElementById('recipeModal').classList.remove('active');">Add to My Plan</button>
+                </div>
+            `;
+            document.getElementById('recipeModal').classList.add('active');
+        }
+
+        function closeModal(event) {
+            if (event.target.id === 'recipeModal' || event.target.classList.contains('close-modal')) {
+                document.getElementById('recipeModal').classList.remove('active');
+            }
+        }
+
+        // Initialize default menu on load
+        renderMenu('all', 'menuGrid');
+    </script>
+
+			
+		
+</body></html>
